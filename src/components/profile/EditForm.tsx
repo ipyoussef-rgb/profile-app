@@ -68,6 +68,30 @@ export function EditForm({
             </dd>
           </div>
         </dl>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a
+            href="/api/auth/login?kc_action=UPDATE_EMAIL&returnTo=%2Fprofile"
+            className="rounded-[var(--radius-kobil)] border border-[var(--color-kobil-border)] px-3 py-1.5 text-sm text-[var(--color-kobil-text)] hover:bg-[var(--color-kobil-surface-muted)]"
+          >
+            Change email
+          </a>
+          <a
+            href="/api/auth/login?kc_action=UPDATE_PHONE_NUMBER&returnTo=%2Fprofile"
+            className="rounded-[var(--radius-kobil)] border border-[var(--color-kobil-border)] px-3 py-1.5 text-sm text-[var(--color-kobil-text)] hover:bg-[var(--color-kobil-surface-muted)]"
+          >
+            Change phone number
+          </a>
+          <a
+            href="/api/auth/login?kc_action=UPDATE_PASSWORD&returnTo=%2Fprofile"
+            className="rounded-[var(--radius-kobil)] border border-[var(--color-kobil-border)] px-3 py-1.5 text-sm text-[var(--color-kobil-text)] hover:bg-[var(--color-kobil-surface-muted)]"
+          >
+            Change password
+          </a>
+        </div>
+        <p className="mt-2 text-xs text-[var(--color-kobil-text-muted)]">
+          Email, phone, and password changes are handled by KOBIL Identity. After you finish,
+          you will be redirected back to your profile.
+        </p>
       </Card>
 
       <Card>
@@ -120,16 +144,6 @@ export function EditForm({
             />
           </Field>
         </div>
-
-        <Field label={t.edit.fields.phone} helper={t.edit.helpers.phone}>
-          <input
-            name="phone"
-            type="tel"
-            defaultValue={initial.phone ?? ""}
-            placeholder="+491701234567"
-            className={inputClass}
-          />
-        </Field>
 
         <fieldset>
           <legend className="mb-2 text-sm font-medium text-[var(--color-kobil-text)]">

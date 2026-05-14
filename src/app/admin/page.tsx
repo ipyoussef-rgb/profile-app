@@ -5,16 +5,14 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 export const dynamic = "force-dynamic";
 
 async function stats() {
-  const [profiles, deletionRequests, consentEvents, auditEvents, catalogs, verifications] =
-    await Promise.all([
-      prisma.profile.count(),
-      prisma.privacyRequest.count({ where: { request_type: "deletion" } }),
-      prisma.userConsent.count(),
-      prisma.profileAuditLog.count(),
-      prisma.attributeCatalog.count({ where: { active: true } }),
-      prisma.userVerification.count({ where: { status: "verified" } }),
-    ]);
-  return { profiles, deletionRequests, consentEvents, auditEvents, catalogs, verifications };
+  const [profiles, deletionRequests, consentEvents, auditEvents, catalogs] = await Promise.all([
+    prisma.profile.count(),
+    prisma.privacyRequest.count({ where: { request_type: "deletion" } }),
+    prisma.userConsent.count(),
+    prisma.profileAuditLog.count(),
+    prisma.attributeCatalog.count({ where: { active: true } }),
+  ]);
+  return { profiles, deletionRequests, consentEvents, auditEvents, catalogs };
 }
 
 export default async function AdminDashboardPage() {
@@ -24,7 +22,6 @@ export default async function AdminDashboardPage() {
     { label: "Deletion requests", value: s.deletionRequests, href: "/admin/audit/users" },
     { label: "Consent events", value: s.consentEvents, href: "/admin/audit/users" },
     { label: "User audit events", value: s.auditEvents, href: "/admin/audit/users" },
-    { label: "Verified identities", value: s.verifications, href: "/admin/audit/users" },
     { label: "Active catalogs", value: s.catalogs, href: "/admin/catalogs" },
   ];
 

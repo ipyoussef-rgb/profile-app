@@ -20,7 +20,6 @@ export function Header({
   const items = [
     { href: "/profile", label: t.nav.overview },
     { href: "/profile/attributes", label: "Attributes" },
-    { href: "/profile/verified", label: "Verified" },
     { href: "/profile/privacy", label: t.nav.privacy },
     { href: "/profile/data-and-account", label: t.nav.data },
   ];
