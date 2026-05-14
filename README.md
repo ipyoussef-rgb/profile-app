@@ -35,10 +35,21 @@ verification are explicitly **out of scope** for this build.
 
 ## Screens
 
+User-facing (require `profile_session` cookie via KOBIL login):
+
 1. **`/profile`** — overview with read-only KOBIL Identity fields
 2. **`/profile/edit`** — edit profile (whitelisted fields only)
-3. **`/profile/privacy`** — manage consent toggles
-4. **`/profile/data-and-account`** — export, request deletion, request history
+3. **`/profile/attributes`** — pick from admin-managed catalogs (e.g. personal interests)
+4. **`/profile/verified`** — identity + age verification status, "Verify with AusweisApp" button
+5. **`/profile/privacy`** — manage consent toggles
+6. **`/profile/data-and-account`** — export, request deletion, request history
+
+Admin (require `profile_admin_session` cookie + `profile_admin` realm role):
+
+1. **`/admin`** — dashboard tiles
+2. **`/admin/audit/users`** — paged user-activity log
+3. **`/admin/audit/admin`** — paged admin-activity log (auto-logs every admin view)
+4. **`/admin/catalogs`** + **`/admin/catalogs/[slug]`** — create catalogs, add/edit/deactivate values
 
 ## KOBIL Identity — what an admin needs to configure
 
@@ -48,28 +59,30 @@ A single Keycloak realm. Provide:
 
 - `KOBIL_IDP_ISSUER` — e.g. `https://idp.<tenant>.kobil.com/auth/realms/<realm>`
 
-### Two OIDC clients (same realm)
+### Three OIDC clients (same realm)
 
-1. **`profile-miniapp`** (browser-facing, standalone OIDC)
-   - Access type: **Confidential**
-   - Standard Flow Enabled: **ON** (Authorization Code)
-   - Service Accounts: **OFF**
-   - PKCE Code Challenge Method: **S256**
-   - Valid Redirect URIs (exact match — register both):
-     - `https://<your-vercel-domain>/api/auth/callback`
-     - `http://localhost:3000/api/auth/callback`
-   - Valid Post Logout Redirect URIs:
-     - `https://<your-vercel-domain>/`
-     - `http://localhost:3000/`
-   - Web Origins: same as above
-   - Login Theme: **leave empty** (avoids the `displayWide` macro 500)
-   - Access-token claims: include only `sub`, `preferred_username`, `email`,
-     `email_verified`. **Do not** add rich profile attributes to the access token.
+1. **`profile-miniapp`** (end users)
+   - Confidential, Standard Flow ON, Service Accounts OFF, PKCE S256
+   - Valid Redirect URIs:
+     `https://<vercel-domain>/api/auth/callback`,
+     `http://localhost:3000/api/auth/callback`
+   - Post-Logout Redirect URIs: `https://<vercel-domain>/`, `http://localhost:3000/`
+   - Login Theme: **leave empty** (avoids `displayWide` macro 500)
+   - Access-token claims: only `sub`, `preferred_username`, `email`, `email_verified`
 
-2. **`profile-service`** (server-to-server, reserved for future calls — optional now)
-   - Access type: **Confidential**
-   - Service Accounts Enabled: **ON** (`client_credentials`)
-   - Standard Flow Enabled: **OFF**
+2. **`profile-admin`** (staff — for `/admin/*`)
+   - Confidential, Standard Flow ON, Service Accounts OFF, PKCE S256
+   - Valid Redirect URIs:
+     `https://<vercel-domain>/api/admin/auth/callback`,
+     `http://localhost:3000/api/admin/auth/callback`
+   - Required realm role: **`profile_admin`** — assign to admin users
+   - Mapper: include `realm_access.roles` in the access token (default in Keycloak)
+
+3. **`profile-service`** (server-to-server)
+   - Confidential, Service Accounts ON, Standard Flow OFF, `client_credentials`
+   - Required for: IDP prefill (`getUserInfo`) and sync-back (`updateProfileUser`)
+   - Service-account roles: read + write user attributes per
+     [KOBIL IDP Users API](https://developer.kobil.com/api/idp#tag/Users)
 
 ### Recommended but optional
 
@@ -93,6 +106,13 @@ Copy `.env.example` to `.env` and fill in:
 KOBIL_IDP_ISSUER=
 KOBIL_MINIAPP_CLIENT_ID=
 KOBIL_MINIAPP_CLIENT_SECRET=
+KOBIL_ADMIN_CLIENT_ID=                # optional — admin UI disabled if unset
+KOBIL_ADMIN_CLIENT_SECRET=
+KOBIL_ADMIN_ROLE=profile_admin
+KOBIL_SERVICE_CLIENT_ID=              # optional — IDP prefill/sync disabled if unset
+KOBIL_SERVICE_CLIENT_SECRET=
+KOBIL_IDP_USERS_API=                  # optional override (default: <issuer>/users)
+EID_PROVIDER=mock                     # mock | kobil | ausweisident
 AUTH_SECRET=                          # openssl rand -base64 48
 APP_BASE_URL=http://localhost:3000    # or https://<your-vercel-domain>
 DATABASE_URL=                         # Neon pooled URL (host contains "-pooler")
@@ -127,13 +147,16 @@ warning and continues (the site boots; DB-backed routes 500 until you fix
    copy needed.
 4. **Set environment variables** in the Vercel project settings:
    - `KOBIL_IDP_ISSUER`
-   - `KOBIL_MINIAPP_CLIENT_ID`
-   - `KOBIL_MINIAPP_CLIENT_SECRET`
+   - `KOBIL_MINIAPP_CLIENT_ID` + `KOBIL_MINIAPP_CLIENT_SECRET`
+   - `KOBIL_ADMIN_CLIENT_ID` + `KOBIL_ADMIN_CLIENT_SECRET` *(optional, for `/admin/*`)*
+   - `KOBIL_SERVICE_CLIENT_ID` + `KOBIL_SERVICE_CLIENT_SECRET` *(optional, for IDP prefill/sync)*
+   - `KOBIL_ADMIN_ROLE=profile_admin`
+   - `EID_PROVIDER=mock` *(switch to `kobil` / `ausweisident` when a real eID-Service is wired)*
    - `AUTH_SECRET` (generate with `openssl rand -base64 48`)
    - `APP_BASE_URL` = your production domain (e.g.
      `https://profile-app.vercel.app`)
    - `PRIVACY_NOTICE_VERSION=2026-05-14`
-5. **Register the redirect URI** in KOBIL Identity:
+5. **Register the redirect URIs** in KOBIL Identity (per client — see "Three OIDC clients" above):
    `https://<your-vercel-domain>/api/auth/callback`.
 6. **Redeploy**. The build runs `prisma migrate deploy`, creating the schema on
    the first deploy. Visit your domain → it redirects to `/api/auth/login` →

@@ -86,3 +86,102 @@ model PrivacyRequest {
   @@index([user_id, requested_at])
   @@map("privacy_requests")
 }
+
+// Admin-managed catalogs of selectable attribute values (e.g. interests).
+model AttributeCatalog {
+  id           String                  @id @default(uuid()) @db.Uuid
+  slug         String                  @unique
+  name_en      String
+  name_de      String
+  multi_select Boolean                 @default(true)
+  active       Boolean                 @default(true)
+  created_at   DateTime                @default(now())
+  updated_at   DateTime                @updatedAt
+  values       AttributeCatalogValue[]
+
+  @@map("attribute_catalogs")
+}
+
+model AttributeCatalogValue {
+  id         String           @id @default(uuid()) @db.Uuid
+  catalog_id String           @db.Uuid
+  catalog    AttributeCatalog @relation(fields: [catalog_id], references: [id], onDelete: Cascade)
+  slug       String
+  label_en   String
+  label_de   String
+  sort_order Int              @default(0)
+  active     Boolean          @default(true)
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+
+  @@unique([catalog_id, slug])
+  @@index([catalog_id, active, sort_order])
+  @@map("attribute_catalog_values")
+}
+
+model UserAttributeValue {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  catalog_id String   @db.Uuid
+  value_id   String   @db.Uuid
+  created_at DateTime @default(now())
+
+  @@unique([user_id, catalog_id, value_id])
+  @@index([user_id, catalog_id])
+  @@map("user_attribute_values")
+}
+
+model UserVerification {
+  id                 String              @id @default(uuid()) @db.Uuid
+  user_id            String              @db.Uuid
+  verification_type  String              // eid | age
+  method             String              // ausweisapp | kobil_identity | trusted_provider | mock
+  assurance_level    String?             // low | substantial | high
+  status             String              // pending | verified | failed | expired | revoked
+  purpose            String?
+  provider_reference String?
+  session_id         String?             @unique
+  verified_at        DateTime?
+  expires_at         DateTime?
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  claims             UserVerifiedClaim[]
+
+  @@index([user_id, verification_type, status])
+  @@map("user_verifications")
+}
+
+model UserVerifiedClaim {
+  id              String           @id @default(uuid()) @db.Uuid
+  user_id         String           @db.Uuid
+  verification_id String           @db.Uuid
+  verification    UserVerification @relation(fields: [verification_id], references: [id])
+  claim_name      String           // identity_verified | age_over_16 | age_over_18 | age_over_21
+  claim_value     String           // "true" | "false"
+  source          String
+  assurance_level String?
+  verified_at     DateTime
+  expires_at      DateTime?
+  created_at      DateTime         @default(now())
+
+  @@index([user_id, claim_name, expires_at])
+  @@map("user_verified_claims")
+}
+
+model AdminAuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  admin_subject  String   @db.Uuid
+  admin_username String?
+  target_user_id String?  @db.Uuid
+  action         String
+  resource       String?
+  metadata       Json?
+  request_id     String?
+  ip_address     String?
+  user_agent     String?
+  created_at     DateTime @default(now())
+
+  @@index([admin_subject, created_at])
+  @@index([target_user_id, created_at])
+  @@map("admin_audit_logs")
+}

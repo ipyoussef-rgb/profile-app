@@ -3,35 +3,26 @@
 import Link from "next/link";
 import { useState } from "react";
 import { KobilLogo } from "./KobilLogo";
-import { getCopy, Locale } from "@/lib/copy";
 
 const linkClass =
   "text-[var(--color-kobil-text-muted)] hover:text-[var(--color-kobil-primary)]";
 
-export function Header({
-  locale = "en",
-  username,
-}: {
-  locale?: Locale;
-  username?: string | null;
-}) {
-  const t = getCopy(locale);
+export function AdminHeader({ username }: { username?: string | null }) {
   const [open, setOpen] = useState(false);
   const items = [
-    { href: "/profile", label: t.nav.overview },
-    { href: "/profile/attributes", label: "Attributes" },
-    { href: "/profile/verified", label: "Verified" },
-    { href: "/profile/privacy", label: t.nav.privacy },
-    { href: "/profile/data-and-account", label: t.nav.data },
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/audit/users", label: "User audit" },
+    { href: "/admin/audit/admin", label: "Admin audit" },
+    { href: "/admin/catalogs", label: "Catalogs" },
   ];
 
   return (
     <header className="border-b border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)]">
-      <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/profile" className="flex items-center gap-3">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+        <Link href="/admin" className="flex items-center gap-3">
           <KobilLogo />
           <span className="text-sm font-semibold text-[var(--color-kobil-text)]">
-            {t.appName}
+            Profile Admin
           </span>
         </Link>
 
@@ -53,10 +44,10 @@ export function Header({
             </span>
           ) : null}
           <Link
-            href="/api/auth/logout"
+            href="/api/admin/auth/logout"
             className="hidden rounded-[var(--radius-kobil)] border border-[var(--color-kobil-border)] px-3 py-1 text-[var(--color-kobil-text-muted)] hover:bg-[var(--color-kobil-surface-muted)] md:inline-block"
           >
-            {t.nav.logout}
+            Sign out
           </Link>
           <button
             type="button"
@@ -76,7 +67,7 @@ export function Header({
 
       {open && (
         <nav className="border-t border-[var(--color-kobil-border)] md:hidden">
-          <ul className="mx-auto flex max-w-3xl flex-col px-4 py-2 text-sm">
+          <ul className="mx-auto flex max-w-5xl flex-col px-4 py-2 text-sm">
             {items.map((i) => (
               <li key={i.href}>
                 <Link
@@ -90,10 +81,10 @@ export function Header({
             ))}
             <li className="border-t border-[var(--color-kobil-border)]">
               <Link
-                href="/api/auth/logout"
+                href="/api/admin/auth/logout"
                 className="block py-2 text-[var(--color-kobil-text-muted)]"
               >
-                {t.nav.logout}
+                Sign out
               </Link>
             </li>
           </ul>
