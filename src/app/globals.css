@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  /* KOBIL brand tokens (placeholders — swap with real KOBIL assets). */
+  --color-kobil-primary: #003a70;
+  --color-kobil-primary-hover: #002e58;
+  --color-kobil-secondary: #00a3e0;
+  --color-kobil-surface: #ffffff;
+  --color-kobil-surface-muted: #f4f6fa;
+  --color-kobil-text: #0e1726;
+  --color-kobil-text-muted: #475569;
+  --color-kobil-border: #d8dee9;
+  --color-kobil-danger: #b91c1c;
+  --color-kobil-success: #047857;
+
+  --font-kobil: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius-kobil: 10px;
+}
+
+html, body {
+  background: var(--color-kobil-surface-muted);
+  color: var(--color-kobil-text);
+  font-family: var(--font-kobil);
+}
+
+* { box-sizing: border-box; }

@@ -1,0 +1,82 @@
+// Profile Service — owns user-editable product profile data, privacy ledger,
+// GDPR requests, and audit logs. Identity data lives in KOBIL Identity, NOT here.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// user_id == KOBIL Identity `sub` (UUID).
+model Profile {
+  user_id                  String    @id @db.Uuid
+  display_name             String?   @db.VarChar(80)
+  avatar_url               String?
+  bio                      String?   @db.VarChar(500)
+  locale                   String?
+  timezone                 String?
+  phone                    String?
+  address_json             Json?
+  profile_visibility       String    @default("private") // private | miniapps | public
+  notification_preferences Json?     @map("notification_preferences_json")
+  privacy_settings         Json?     @map("privacy_settings_json")
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+  deletion_requested_at    DateTime?
+  deleted_at               DateTime?
+  anonymized_at            DateTime?
+
+  @@map("profiles")
+}
+
+// Append-only consent ledger. Never UPDATE an existing row.
+model UserConsent {
+  id             String    @id @default(uuid()) @db.Uuid
+  user_id        String    @db.Uuid
+  purpose        String
+  legal_basis    String
+  granted        Boolean
+  notice_version String
+  source         String
+  created_at     DateTime  @default(now())
+  withdrawn_at   DateTime?
+  metadata       Json?
+
+  @@index([user_id, purpose, created_at])
+  @@map("user_consents")
+}
+
+model ProfileAuditLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  user_id         String   @db.Uuid
+  actor_subject   String   @db.Uuid
+  actor_client_id String?
+  action          String
+  changed_fields  String[]
+  decision        String   // allow | deny
+  reason          String?
+  request_id      String?
+  ip_address      String?
+  user_agent      String?
+  created_at      DateTime @default(now())
+
+  @@index([user_id, created_at])
+  @@map("profile_audit_logs")
+}
+
+model PrivacyRequest {
+  id           String    @id @default(uuid()) @db.Uuid
+  user_id      String    @db.Uuid
+  request_type String    // export | deletion
+  status       String    // received | in_progress | completed | rejected
+  requested_at DateTime  @default(now())
+  completed_at DateTime?
+  metadata     Json?
+
+  @@index([user_id, requested_at])
+  @@map("privacy_requests")
+}
