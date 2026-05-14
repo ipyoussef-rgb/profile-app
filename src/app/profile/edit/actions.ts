@@ -5,13 +5,22 @@ import { ZodError } from "zod";
 import { audit } from "@/lib/audit";
 import { requireUser } from "@/lib/current-user";
 import { upsertProfile } from "@/lib/profile-service";
-import { FORBIDDEN_PROFILE_KEYS, profileUpdateSchema } from "@/lib/schemas/profile";
+import {
+  FORBIDDEN_PROFILE_KEYS,
+  idpProfileUpdateSchema,
+  profileUpdateSchema,
+} from "@/lib/schemas/profile";
+import {
+  KobilIdpNotConfiguredError,
+  updateUserInIdp,
+} from "@/lib/kobil-idp";
 
 export type SaveResult =
   | { ok: true }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
-export async function saveProfileAction(formData: FormData): Promise<SaveResult> {
+/* App-profile save (display_name, avatar_url, profile_visibility, etc.). */
+export async function saveAppProfileAction(formData: FormData): Promise<SaveResult> {
   let user;
   try {
     user = await requireUser();
@@ -19,28 +28,14 @@ export async function saveProfileAction(formData: FormData): Promise<SaveResult>
     return { ok: false, error: "unauthorized" };
   }
 
-  const raw = Object.fromEntries(formData.entries());
-
-  // Coerce / shape form data into the schema shape. Empty strings → omit field.
   const candidate: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(raw)) {
+  for (const [k, v] of Object.entries(Object.fromEntries(formData.entries()))) {
     if (typeof v !== "string") continue;
     const trimmed = v.trim();
     if (trimmed === "") continue;
     candidate[k] = trimmed;
   }
 
-  // Build a nested `address` object if any address subfields are present.
-  const addr: Record<string, string> = {};
-  for (const key of ["street", "locality", "postal_code", "country"] as const) {
-    if (typeof candidate[`address.${key}`] === "string") {
-      addr[key] = candidate[`address.${key}`] as string;
-      delete candidate[`address.${key}`];
-    }
-  }
-  if (Object.keys(addr).length > 0) candidate["address"] = addr;
-
-  // Reject KOBIL-Identity-owned / verified-claim keys before zod runs.
   const forbidden = Object.keys(candidate).filter((k) =>
     (FORBIDDEN_PROFILE_KEYS as readonly string[]).includes(k),
   );
@@ -58,9 +53,7 @@ export async function saveProfileAction(formData: FormData): Promise<SaveResult>
   } catch (err) {
     if (err instanceof ZodError) {
       const fieldErrors: Record<string, string> = {};
-      for (const i of err.issues) {
-        fieldErrors[i.path.join(".") || "_root"] = i.message;
-      }
+      for (const i of err.issues) fieldErrors[i.path.join(".") || "_root"] = i.message;
       return { ok: false, error: "validation", fieldErrors };
     }
     throw err;
@@ -76,7 +69,90 @@ export async function saveProfileAction(formData: FormData): Promise<SaveResult>
     action: "profile_update",
     changed_fields: changed,
   });
+  revalidatePath("/profile");
+  revalidatePath("/profile/edit");
+  return { ok: true };
+}
 
+/* Identity save → KOBIL updateProfileUser. Only sends fields that actually
+ * differ from the prefilled snapshot so we don't overwrite untouched ones. */
+export async function saveIdentityAction(formData: FormData): Promise<SaveResult> {
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    return { ok: false, error: "unauthorized" };
+  }
+
+  const raw = Object.fromEntries(formData.entries());
+  const candidate: Record<string, unknown> = {};
+
+  const scalars = ["first_name", "last_name", "phone", "locale", "birthdate"] as const;
+  for (const k of scalars) {
+    const v = raw[k];
+    if (typeof v === "string" && v.trim() !== "") candidate[k] = v.trim();
+  }
+
+  const addr: Record<string, string> = {};
+  for (const k of ["street", "locality", "postal_code", "country"] as const) {
+    const v = raw[`address.${k}`];
+    if (typeof v === "string" && v.trim() !== "") {
+      addr[k] = k === "country" ? v.trim().toUpperCase() : v.trim();
+    }
+  }
+  if (Object.keys(addr).length > 0) candidate.address = addr;
+
+  let patch;
+  try {
+    patch = idpProfileUpdateSchema.parse(candidate);
+  } catch (err) {
+    if (err instanceof ZodError) {
+      const fieldErrors: Record<string, string> = {};
+      for (const i of err.issues) fieldErrors[i.path.join(".") || "_root"] = i.message;
+      return { ok: false, error: "validation", fieldErrors };
+    }
+    throw err;
+  }
+
+  if (Object.keys(patch).length === 0) return { ok: true };
+
+  const idpPatch: Parameters<typeof updateUserInIdp>[1] = {};
+  if (patch.first_name !== undefined) idpPatch.firstName = patch.first_name;
+  if (patch.last_name !== undefined) idpPatch.lastName = patch.last_name;
+  const attrs: Record<string, string[]> = {};
+  if (patch.phone !== undefined) attrs.phone = [patch.phone];
+  if (patch.locale !== undefined) attrs.locale = [patch.locale];
+  if (patch.birthdate !== undefined) attrs.birthdate = [patch.birthdate];
+  if (patch.address) {
+    if (patch.address.street !== undefined) attrs.street = [patch.address.street];
+    if (patch.address.locality !== undefined) attrs.locality = [patch.address.locality];
+    if (patch.address.postal_code !== undefined) attrs.postal_code = [patch.address.postal_code];
+    if (patch.address.country !== undefined) attrs.country = [patch.address.country];
+  }
+  if (Object.keys(attrs).length > 0) idpPatch.attributes = attrs;
+
+  try {
+    await updateUserInIdp(user.sub, idpPatch);
+  } catch (err) {
+    if (err instanceof KobilIdpNotConfiguredError) {
+      return {
+        ok: false,
+        error:
+          "KOBIL service client is not configured. Set KOBIL_SERVICE_CLIENT_ID and KOBIL_SERVICE_CLIENT_SECRET in Vercel and redeploy.",
+      };
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "kobil_idp_update_failed",
+    };
+  }
+
+  await audit({
+    user_id: user.sub,
+    actor_subject: user.sub,
+    action: "profile_update",
+    changed_fields: Object.keys(patch).map((k) => `idp:${k}`),
+  });
   revalidatePath("/profile");
   revalidatePath("/profile/edit");
   return { ok: true };

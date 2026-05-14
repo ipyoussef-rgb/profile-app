@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { requireUserOrRedirect } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
 import { DataAccount } from "@/components/data/DataAccount";
+import { DEFAULT_LOCALE, getCopy } from "@/lib/copy";
 
 export const dynamic = "force-dynamic";
 
@@ -19,5 +21,13 @@ export default async function DataAccountPage() {
     completed_at: r.completed_at?.toISOString() ?? null,
   }));
 
-  return <DataAccount initialRequests={initialRequests} locale="en" />;
+  const t = getCopy(DEFAULT_LOCALE);
+  return (
+    <div className="space-y-4">
+      <DataAccount initialRequests={initialRequests} locale={DEFAULT_LOCALE} />
+      <Link href="/profile" className="inline-block text-sm text-[var(--color-kobil-primary)] underline">
+        ← {t.back.toProfile}
+      </Link>
+    </div>
+  );
 }

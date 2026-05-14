@@ -4,6 +4,8 @@ import { getCopy } from "@/lib/copy";
 import { CONSENT_PURPOSES, LEGAL_BASIS, type ConsentPurpose } from "@/lib/schemas/consents";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { ConsentToggle } from "@/components/privacy/ConsentToggle";
+import { DEFAULT_LOCALE } from "@/lib/copy";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,7 @@ export default async function PrivacyPage() {
   for (const r of rows) {
     if (!latestByPurpose.has(r.purpose)) latestByPurpose.set(r.purpose, r);
   }
-  const t = getCopy("en");
+  const t = getCopy(DEFAULT_LOCALE);
 
   return (
     <div className="space-y-4">
@@ -45,13 +47,17 @@ export default async function PrivacyPage() {
           })}
         </div>
         <p className="mt-4 text-xs text-[var(--color-kobil-text-muted)]">
-          Legal basis: consent (GDPR Art. 6(1)(a)). Withdrawing a consent is as easy as granting it.
+          Rechtsgrundlage: Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Ein Widerruf ist genauso
+          einfach möglich wie die Erteilung.
         </p>
       </Card>
       <p className="px-1 text-xs text-[var(--color-kobil-text-muted)]">
-        Each change appends a new immutable record to the consent ledger; previous decisions are
-        preserved for accountability ({Object.keys(LEGAL_BASIS).length} purposes tracked).
+        Jede Änderung erzeugt einen neuen, unveränderlichen Eintrag im Einwilligungs-Ledger;
+        frühere Entscheidungen bleiben für Nachweiszwecke erhalten ({Object.keys(LEGAL_BASIS).length} Zwecke).
       </p>
+      <Link href="/profile" className="inline-block text-sm text-[var(--color-kobil-primary)] underline">
+        ← {t.back.toProfile}
+      </Link>
     </div>
   );
 }

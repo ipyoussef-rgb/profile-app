@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { z, ZodError } from "zod";
+import { ZodError } from "zod";
 import { audit, requestMetaFromHeaders } from "@/lib/audit";
 import { requireUser, UnauthorizedError } from "@/lib/current-user";
 import { json, serverError, unauthorized, unprocessable } from "@/lib/http";
@@ -8,17 +8,9 @@ import {
   updateUserInIdp,
 } from "@/lib/kobil-idp";
 import { logEvent } from "@/lib/safe-log";
+import { idpProfileUpdateSchema } from "@/lib/schemas/profile";
 
 export const dynamic = "force-dynamic";
-
-const patchSchema = z
-  .object({
-    first_name: z.string().trim().max(80).optional(),
-    last_name: z.string().trim().max(80).optional(),
-    phone: z.string().trim().max(40).optional(),
-    locale: z.string().trim().max(20).optional(),
-  })
-  .strict();
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -34,21 +26,35 @@ export async function PATCH(req: NextRequest) {
 
     let patch;
     try {
-      patch = patchSchema.parse(body);
+      patch = idpProfileUpdateSchema.parse(body);
     } catch (e) {
-      if (e instanceof ZodError)
-        return unprocessable({ issues: e.issues.map((i) => i.message) });
+      if (e instanceof ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        for (const i of e.issues) fieldErrors[i.path.join(".") || "_root"] = i.message;
+        return unprocessable({ message: "invalid fields", fieldErrors });
+      }
       throw e;
     }
 
-    // Translate snake_case → KOBIL's mixed conventions.
+    // Map snake_case → KOBIL conventions. Top-level firstName/lastName/email,
+    // everything else under `attributes`.
     const idpPatch: Parameters<typeof updateUserInIdp>[1] = {};
     if (patch.first_name !== undefined) idpPatch.firstName = patch.first_name;
     if (patch.last_name !== undefined) idpPatch.lastName = patch.last_name;
+
     const attrs: Record<string, string[]> = {};
     if (patch.phone !== undefined) attrs.phone = [patch.phone];
     if (patch.locale !== undefined) attrs.locale = [patch.locale];
+    if (patch.birthdate !== undefined) attrs.birthdate = [patch.birthdate];
+    if (patch.address) {
+      if (patch.address.street !== undefined) attrs.street = [patch.address.street];
+      if (patch.address.locality !== undefined) attrs.locality = [patch.address.locality];
+      if (patch.address.postal_code !== undefined) attrs.postal_code = [patch.address.postal_code];
+      if (patch.address.country !== undefined) attrs.country = [patch.address.country];
+    }
     if (Object.keys(attrs).length > 0) idpPatch.attributes = attrs;
+
+    if (Object.keys(idpPatch).length === 0) return json({ ok: true, changed: 0 });
 
     await updateUserInIdp(user.sub, idpPatch);
 
@@ -60,7 +66,7 @@ export async function PATCH(req: NextRequest) {
       ...meta,
     });
 
-    return json({ ok: true });
+    return json({ ok: true, changed: Object.keys(patch).length });
   } catch (err) {
     if (err instanceof UnauthorizedError) return unauthorized();
     if (err instanceof KobilIdpNotConfiguredError) {

@@ -20,19 +20,12 @@ function profileResponse(
     user_id: identity.sub,
     display_name: row?.display_name ?? null,
     avatar_url: row?.avatar_url ?? null,
-    bio: row?.bio ?? null,
-    locale: row?.locale ?? null,
-    timezone: row?.timezone ?? null,
-    phone: row?.phone ?? null,
-    address: row?.address_json ?? null,
     profile_visibility: row?.profile_visibility ?? "private",
     notification_preferences: row?.notification_preferences ?? null,
     privacy_settings: row?.privacy_settings ?? null,
     created_at: row?.created_at ?? null,
     updated_at: row?.updated_at ?? null,
     deletion_requested_at: row?.deletion_requested_at ?? null,
-
-    // Read-only identity fields from the access token. Not persisted here.
     identity: {
       username: identity.preferred_username ?? null,
       email: identity.email ?? null,
@@ -144,18 +137,12 @@ export async function DELETE(req: NextRequest) {
     const existing = await getProfile(user.sub);
 
     await prisma.$transaction(async (tx) => {
-      // Anonymize editable fields + mark deletion_requested_at.
       if (existing) {
         await tx.profile.update({
           where: { user_id: user.sub },
           data: {
             display_name: null,
             avatar_url: null,
-            bio: null,
-            locale: null,
-            timezone: null,
-            phone: null,
-            address_json: Prisma.DbNull,
             profile_visibility: "private",
             notification_preferences: Prisma.DbNull,
             privacy_settings: Prisma.DbNull,

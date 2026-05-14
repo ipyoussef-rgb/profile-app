@@ -1,42 +1,61 @@
-// English GDPR + product copy. EN/DE must stay in sync.
+// English fallback. Keep keys in sync with de.ts.
 
 export const en = {
   appName: "My Profile",
+  brand: "KOBIL",
   nav: {
     overview: "Profile",
     edit: "Edit profile",
-    privacy: "Privacy & consents",
+    attributes: "Interests",
+    privacy: "Privacy",
     data: "Data & account",
     logout: "Sign out",
   },
   identity: {
+    sectionTitle: "Identity attributes (from KOBIL Identity)",
+    sectionHelper:
+      "These attributes are managed in KOBIL Identity. Changes are synced directly to your identity account.",
     viaKobilIdentity: "via KOBIL Identity",
     emailReadOnly: "Your email is managed by KOBIL Identity.",
     emailVerified: "Email verified",
     emailNotVerified: "Email not verified",
+    notConfigured:
+      "KOBIL Identity API is not configured (KOBIL_SERVICE_CLIENT_ID/SECRET missing).",
+  },
+  fields: {
+    first_name: "First name",
+    last_name: "Last name",
+    username: "Username",
+    email: "Email",
+    phone: "Phone",
+    locale: "Language",
+    birthdate: "Date of birth",
+    address: "Address",
+    street: "Street",
+    locality: "City",
+    postal_code: "Postal code",
+    country: "Country (e.g. DE)",
+    display_name: "Display name",
+    avatar_url: "Avatar URL",
+    profile_visibility: "Profile visibility",
   },
   overview: {
     title: "Profile",
-    emptyBio: "No bio yet.",
-    visibilityLabel: "Profile visibility",
+    visibilityLabel: "Visibility",
     edit: "Edit profile",
+    ageOver16: "Over 16",
+    ageOver18: "Over 18",
+    ageUnknown: "Date of birth not on file",
+    yes: "yes",
+    no: "no",
   },
   edit: {
-    title: "Edit profile",
-    fields: {
-      display_name: "Display name",
-      avatar_url: "Avatar URL",
-      bio: "Bio",
-      locale: "Language",
-      timezone: "Timezone",
-      phone: "Phone (product use only)",
-      address: "Address",
-      profile_visibility: "Profile visibility",
-    },
+    title: "Edit identity attributes",
+    appTitle: "App profile",
+    appHelper:
+      "These fields live in the Profile-Service database, not in KOBIL Identity.",
     helpers: {
       optional: "Optional. Used only to personalize your profile. You can remove this at any time.",
-      phone:
-        "Optional. This phone is product-managed and is not your login/MFA phone. You can remove this at any time.",
       address: "Optional. You can remove this at any time.",
     },
     visibilityOptions: {
@@ -44,9 +63,15 @@ export const en = {
       miniapps: "Miniapps — visible to other features inside the app",
       public: "Public",
     },
-    save: "Save changes",
+    saveIdentity: "Save identity attributes",
+    saveApp: "Save app profile",
     saved: "Saved",
     error: "Could not save changes.",
+    changeEmail: "Change email",
+    changePhone: "Change phone number",
+    changePassword: "Change password",
+    idpHelper:
+      "Email, phone, and password changes are handled by KOBIL Identity. After you finish, you will be redirected back to your profile.",
   },
   privacy: {
     title: "Privacy & consents",
@@ -107,6 +132,14 @@ export const en = {
       completed: "Completed",
       rejected: "Rejected",
     },
+  },
+  attributes: {
+    title: "Interests & traits",
+    saveHint: "Optional. Used to personalize your profile — you can remove your selection at any time.",
+    save: "Save",
+  },
+  back: {
+    toProfile: "Back to profile",
   },
   errors: {
     sessionExpired: "Your session has expired. Please sign in again.",

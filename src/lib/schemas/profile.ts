@@ -6,17 +6,7 @@ export type ProfileVisibility = (typeof PROFILE_VISIBILITY)[number];
 
 const isValidLocale = (s: string) => {
   try {
-    // throws on invalid BCP 47
     new Intl.Locale(s);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const isValidTimezone = (s: string) => {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: s });
     return true;
   } catch {
     return false;
@@ -52,19 +42,13 @@ export const privacySettingsSchema = z
   })
   .strict();
 
-// PATCH /me/profile body. Strict: any unknown key → 422.
+// PATCH /me/profile — app-managed fields ONLY. Identity attributes (firstName,
+// lastName, email, phone, address, locale, birthdate, …) flow through
+// /api/me/idp/profile and the KOBIL updateProfileUser endpoint instead.
 export const profileUpdateSchema = z
   .object({
     display_name: z.string().trim().max(80).optional(),
     avatar_url: z.string().url().max(2048).optional(),
-    bio: z.string().trim().max(500).optional(),
-    locale: z.string().refine(isValidLocale, "invalid BCP 47 locale").optional(),
-    timezone: z.string().refine(isValidTimezone, "invalid IANA timezone").optional(),
-    phone: z
-      .string()
-      .refine((s) => isValidPhoneNumber(s), "invalid E.164 phone number")
-      .optional(),
-    address: addressSchema.optional(),
     profile_visibility: z.enum(PROFILE_VISIBILITY).optional(),
     notification_preferences: notificationPrefsSchema.optional(),
     privacy_settings: privacySettingsSchema.optional(),
@@ -73,8 +57,28 @@ export const profileUpdateSchema = z
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 
-// Fields the user must never edit through this endpoint.
-// They are owned by KOBIL Identity OR are verified claims.
+// IDP-managed attributes that this app proxies to KOBIL updateProfileUser.
+// Validated server-side before the IDP call.
+export const idpProfileUpdateSchema = z
+  .object({
+    first_name: z.string().trim().max(80).optional(),
+    last_name: z.string().trim().max(80).optional(),
+    phone: z
+      .string()
+      .refine((s) => isValidPhoneNumber(s), "invalid E.164 phone number")
+      .optional(),
+    locale: z.string().refine(isValidLocale, "invalid BCP 47 locale").optional(),
+    birthdate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
+      .optional(),
+    address: addressSchema.optional(),
+  })
+  .strict();
+
+export type IdpProfileUpdateInput = z.infer<typeof idpProfileUpdateSchema>;
+
+// Fields the user must never edit through PATCH /me/profile.
 export const FORBIDDEN_PROFILE_KEYS = [
   "email",
   "username",
@@ -85,9 +89,31 @@ export const FORBIDDEN_PROFILE_KEYS = [
   "email_verified",
   "mfa",
   "otp",
-  "identity_verified",
-  "age_over_16",
-  "age_over_18",
-  "age_over_21",
   "birthdate",
+  "phone",
+  "locale",
+  "address",
+  "first_name",
+  "last_name",
+  "firstName",
+  "lastName",
 ] as const;
+
+/** Compute age-over-N booleans from a YYYY-MM-DD birthdate, server-side.
+ *  We never store the birthdate locally — this runs each render off the
+ *  IDP getUserInfo response. */
+export function ageOverFromBirthdate(
+  birthdate: string | null | undefined,
+): { over_16: boolean | null; over_18: boolean | null } {
+  if (!birthdate || !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) {
+    return { over_16: null, over_18: null };
+  }
+  const [y, m, d] = birthdate.split("-").map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return { over_16: null, over_18: null };
+  const now = new Date();
+  const age =
+    now.getUTCFullYear() -
+    y -
+    (now.getUTCMonth() + 1 < m || (now.getUTCMonth() + 1 === m && now.getUTCDate() < d) ? 1 : 0);
+  return { over_16: age >= 16, over_18: age >= 18 };
+}

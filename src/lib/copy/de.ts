@@ -1,43 +1,62 @@
-// Deutsche Texte. Formelle Anrede (Sie). EN/DE müssen synchron bleiben.
+// Standard-Sprache der App. Formelle Anrede (Sie).
 
 export const de = {
   appName: "Mein Profil",
+  brand: "KOBIL",
   nav: {
     overview: "Profil",
     edit: "Profil bearbeiten",
-    privacy: "Datenschutz & Einwilligungen",
+    attributes: "Interessen",
+    privacy: "Datenschutz",
     data: "Daten & Konto",
     logout: "Abmelden",
   },
   identity: {
-    viaKobilIdentity: "über KOBIL Identity",
+    sectionTitle: "Identitätsdaten (von KOBIL Identity)",
+    sectionHelper:
+      "Diese Angaben werden in KOBIL Identity gepflegt. Änderungen werden direkt mit Ihrem Identitätskonto synchronisiert.",
+    viaKobilIdentity: "via KOBIL Identity",
     emailReadOnly: "Ihre E-Mail-Adresse wird von KOBIL Identity verwaltet.",
     emailVerified: "E-Mail bestätigt",
     emailNotVerified: "E-Mail nicht bestätigt",
+    notConfigured:
+      "KOBIL Identity API ist nicht konfiguriert (KOBIL_SERVICE_CLIENT_ID/SECRET fehlen).",
+  },
+  fields: {
+    first_name: "Vorname",
+    last_name: "Nachname",
+    username: "Benutzername",
+    email: "E-Mail",
+    phone: "Telefonnummer",
+    locale: "Sprache",
+    birthdate: "Geburtsdatum",
+    address: "Adresse",
+    street: "Straße",
+    locality: "Ort",
+    postal_code: "Postleitzahl",
+    country: "Land (z. B. DE)",
+    display_name: "Anzeigename",
+    avatar_url: "Avatar-URL",
+    profile_visibility: "Sichtbarkeit",
   },
   overview: {
     title: "Profil",
-    emptyBio: "Noch keine Kurzbeschreibung.",
     visibilityLabel: "Sichtbarkeit",
     edit: "Profil bearbeiten",
+    ageOver16: "Über 16 Jahre",
+    ageOver18: "Über 18 Jahre",
+    ageUnknown: "Geburtsdatum nicht hinterlegt",
+    yes: "ja",
+    no: "nein",
   },
   edit: {
-    title: "Profil bearbeiten",
-    fields: {
-      display_name: "Anzeigename",
-      avatar_url: "Avatar-URL",
-      bio: "Kurzbeschreibung",
-      locale: "Sprache",
-      timezone: "Zeitzone",
-      phone: "Telefon (nur Produktnutzung)",
-      address: "Adresse",
-      profile_visibility: "Sichtbarkeit",
-    },
+    title: "Identitätsdaten bearbeiten",
+    appTitle: "App-Profil",
+    appHelper:
+      "Diese Felder werden in der Profile-Service-Datenbank gespeichert, nicht in KOBIL Identity.",
     helpers: {
       optional:
         "Optional. Wird nur zur Personalisierung Ihres Profils verwendet. Sie können dies jederzeit entfernen.",
-      phone:
-        "Optional. Diese Telefonnummer wird vom Produkt verwaltet und ist nicht Ihre Login-/MFA-Nummer. Sie können dies jederzeit entfernen.",
       address: "Optional. Sie können dies jederzeit entfernen.",
     },
     visibilityOptions: {
@@ -45,9 +64,15 @@ export const de = {
       miniapps: "Miniapps — andere Funktionen in der App sehen dies",
       public: "Öffentlich",
     },
-    save: "Änderungen speichern",
+    saveIdentity: "Identitätsdaten speichern",
+    saveApp: "App-Profil speichern",
     saved: "Gespeichert",
     error: "Änderungen konnten nicht gespeichert werden.",
+    changeEmail: "E-Mail-Adresse ändern",
+    changePhone: "Telefonnummer ändern",
+    changePassword: "Passwort ändern",
+    idpHelper:
+      "E-Mail-, Telefon- und Passwortänderungen werden von KOBIL Identity durchgeführt. Nach Abschluss werden Sie zurück zu Ihrem Profil geleitet.",
   },
   privacy: {
     title: "Datenschutz & Einwilligungen",
@@ -108,6 +133,14 @@ export const de = {
       completed: "Abgeschlossen",
       rejected: "Abgelehnt",
     },
+  },
+  attributes: {
+    title: "Interessen & Eigenschaften",
+    saveHint: "Optional. Wird zur Personalisierung verwendet — Sie können Auswahl jederzeit entfernen.",
+    save: "Speichern",
+  },
+  back: {
+    toProfile: "Zurück zum Profil",
   },
   errors: {
     sessionExpired: "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",

@@ -18,15 +18,15 @@ datasource db {
 }
 
 // user_id == KOBIL Identity `sub` (UUID).
+// App-managed profile data. All identity/profile attributes that live in
+// KOBIL Identity (firstName, lastName, email, phone, address, locale,
+// birthdate, …) are read via getUserInfo and written via updateProfileUser —
+// not stored here. The local row holds only what KOBIL Identity doesn't
+// already own.
 model Profile {
   user_id                  String    @id @db.Uuid
   display_name             String?   @db.VarChar(80)
   avatar_url               String?
-  bio                      String?   @db.VarChar(500)
-  locale                   String?
-  timezone                 String?
-  phone                    String?
-  address_json             Json?
   profile_visibility       String    @default("private") // private | miniapps | public
   notification_preferences Json?     @map("notification_preferences_json")
   privacy_settings         Json?     @map("privacy_settings_json")

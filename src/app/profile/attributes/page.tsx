@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { requireUserOrRedirect } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
 import { AttributePicker } from "@/components/profile/AttributePicker";
+import { DEFAULT_LOCALE, getCopy } from "@/lib/copy";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,8 @@ export default async function AttributesPage() {
     selectedByCatalog.get(s.catalog_id)!.add(s.value_id);
   }
 
+  const t = getCopy(DEFAULT_LOCALE);
+
   return (
     <div className="space-y-4">
       {catalogs.map((c) => (
@@ -33,7 +37,7 @@ export default async function AttributesPage() {
           key={c.id}
           catalogId={c.id}
           catalogSlug={c.slug}
-          title={c.name_en}
+          title={DEFAULT_LOCALE === "de" ? c.name_de : c.name_en}
           description={null}
           multiSelect={c.multi_select}
           values={c.values.map((v) => ({
@@ -43,14 +47,17 @@ export default async function AttributesPage() {
             label_de: v.label_de,
           }))}
           initialSelected={Array.from(selectedByCatalog.get(c.id) ?? [])}
-          locale="en"
+          locale={DEFAULT_LOCALE}
         />
       ))}
       {catalogs.length === 0 && (
         <p className="text-sm text-[var(--color-kobil-text-muted)]">
-          No catalogs are currently active. Ask an admin to create one in the admin console.
+          Es sind derzeit keine Kataloge aktiv. Bitte einen Administrator in der Admin-Konsole.
         </p>
       )}
+      <Link href="/profile" className="inline-block text-sm text-[var(--color-kobil-primary)] underline">
+        ← {t.back.toProfile}
+      </Link>
     </div>
   );
 }

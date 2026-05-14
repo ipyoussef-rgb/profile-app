@@ -22,11 +22,6 @@ export async function requestDeletionAction(): Promise<{ ok: boolean; error?: st
         data: {
           display_name: null,
           avatar_url: null,
-          bio: null,
-          locale: null,
-          timezone: null,
-          phone: null,
-          address_json: Prisma.DbNull,
           profile_visibility: "private",
           notification_preferences: Prisma.DbNull,
           privacy_settings: Prisma.DbNull,
