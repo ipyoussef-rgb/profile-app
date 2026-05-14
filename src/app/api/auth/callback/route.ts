@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as client from "openid-client";
+import { decodeJwt } from "jose";
 import { env } from "@/lib/env";
 import { getOidcConfig, redirectUri } from "@/lib/oidc";
 import {
@@ -9,6 +10,26 @@ import {
   signSession,
 } from "@/lib/session";
 import { logEvent } from "@/lib/safe-log";
+
+function extractRoles(
+  idClaims: Record<string, unknown> | undefined,
+  accessToken: string | undefined,
+): string[] | undefined {
+  const fromId = (idClaims?.["realm_access"] as { roles?: string[] } | undefined)?.roles;
+  let fromAccess: string[] | undefined;
+  if (accessToken) {
+    try {
+      const payload = decodeJwt(accessToken) as Record<string, unknown>;
+      fromAccess = (payload["realm_access"] as { roles?: string[] } | undefined)?.roles;
+    } catch {
+      /* opaque token, ignore */
+    }
+  }
+  const merged = new Set<string>();
+  if (Array.isArray(fromId)) for (const r of fromId) merged.add(r);
+  if (Array.isArray(fromAccess)) for (const r of fromAccess) merged.add(r);
+  return merged.size > 0 ? Array.from(merged) : undefined;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -86,13 +107,12 @@ export async function GET(req: NextRequest) {
     typeof claims["email_verified"] === "boolean"
       ? (claims["email_verified"] as boolean)
       : undefined;
-  const rawRoles = (claims["realm_access"] as { roles?: string[] } | undefined)?.roles;
-  const roles = Array.isArray(rawRoles) ? rawRoles : undefined;
-
   const accessToken = tokens.access_token;
   if (!accessToken) {
     return failOidc("missing_access_token");
   }
+
+  const roles = extractRoles(claims as Record<string, unknown>, accessToken);
 
   const session = await signSession({
     sub,

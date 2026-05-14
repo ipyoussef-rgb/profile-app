@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as client from "openid-client";
+import { decodeJwt } from "jose";
 import { env } from "@/lib/env";
 import { getAdminOidcConfig, adminRedirectUri } from "@/lib/admin-oidc";
 import {
@@ -9,6 +10,29 @@ import {
   signAdminSession,
 } from "@/lib/admin-session";
 import { logEvent } from "@/lib/safe-log";
+
+// Keycloak puts realm_access.roles in the access token by default but NOT in
+// the ID token unless the client has the matching mapper enabled. Read both
+// and take the union so role gating works regardless of mapper config.
+function extractRoles(
+  idClaims: Record<string, unknown> | undefined,
+  accessToken: string | undefined,
+): string[] | undefined {
+  const fromId = (idClaims?.["realm_access"] as { roles?: string[] } | undefined)?.roles;
+  let fromAccess: string[] | undefined;
+  if (accessToken) {
+    try {
+      const payload = decodeJwt(accessToken) as Record<string, unknown>;
+      fromAccess = (payload["realm_access"] as { roles?: string[] } | undefined)?.roles;
+    } catch {
+      // Access token isn't a JWT (e.g. opaque) — fall back to id token only.
+    }
+  }
+  const merged = new Set<string>();
+  if (Array.isArray(fromId)) for (const r of fromId) merged.add(r);
+  if (Array.isArray(fromAccess)) for (const r of fromAccess) merged.add(r);
+  return merged.size > 0 ? Array.from(merged) : undefined;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -66,11 +90,17 @@ export async function GET(req: NextRequest) {
   const sub = claims.sub as string;
   const preferred_username = (claims["preferred_username"] as string | undefined) ?? undefined;
   const email = (claims["email"] as string | undefined) ?? undefined;
-  const rawRoles = (claims["realm_access"] as { roles?: string[] } | undefined)?.roles;
-  const roles = Array.isArray(rawRoles) ? rawRoles : undefined;
 
   const accessToken = tokens.access_token;
   if (!accessToken) return fail("missing_access_token");
+
+  const roles = extractRoles(claims as Record<string, unknown>, accessToken);
+  // Telemetry — visible in Vercel runtime logs, helps debugging role gating.
+  logEvent("info", "admin_oidc_callback_ok", {
+    sub,
+    role_count: roles?.length ?? 0,
+    has_admin_role: roles?.includes(env().KOBIL_ADMIN_ROLE) ?? false,
+  });
 
   const session = await signAdminSession({
     sub,
