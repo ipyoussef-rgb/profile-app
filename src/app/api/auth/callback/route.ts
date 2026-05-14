@@ -55,9 +55,14 @@ export async function GET(req: NextRequest) {
 
   const config = await getOidcConfig();
 
+  // openid-client v6 does `instanceof URL` on currentUrl. Next.js's
+  // `req.nextUrl` is a NextURL subclass and fails the check across realms;
+  // a fresh stdlib URL works.
+  const currentUrl = new URL(req.url);
+
   let tokens: Awaited<ReturnType<typeof client.authorizationCodeGrant>>;
   try {
-    tokens = await client.authorizationCodeGrant(config, req.nextUrl, {
+    tokens = await client.authorizationCodeGrant(config, currentUrl, {
       pkceCodeVerifier: stateBag.codeVerifier,
       expectedState: stateBag.state,
       expectedNonce: stateBag.nonce,
