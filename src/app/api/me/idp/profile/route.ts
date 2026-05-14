@@ -56,7 +56,13 @@ export async function PATCH(req: NextRequest) {
 
     if (Object.keys(idpPatch).length === 0) return json({ ok: true, changed: 0 });
 
-    await updateUserInIdp(user.sub, idpPatch);
+    if (!user.email) {
+      return json(
+        { ok: false, error: "no_email_in_session" },
+        { status: 400 },
+      );
+    }
+    await updateUserInIdp(user.email, idpPatch);
 
     await audit({
       user_id: user.sub,

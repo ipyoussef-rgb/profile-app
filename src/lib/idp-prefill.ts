@@ -43,10 +43,16 @@ const EMPTY: IdpProfileSnapshot["data"] = {
   address: { street: null, locality: null, postal_code: null, country: null },
 };
 
-export async function loadIdpProfile(sub: string): Promise<IdpProfileSnapshot> {
+/** Pass the user's email — the KOBIL v3_user endpoint is keyed by email,
+ *  not by UUID sub. If `email` is empty/undefined, returns an empty snapshot. */
+export async function loadIdpProfile(email: string | undefined): Promise<IdpProfileSnapshot> {
+  if (!email) return { configured: true, found: false, data: EMPTY };
   try {
-    const u = await getUserFromIdp(sub);
-    if (!u) return { configured: true, found: false, data: EMPTY };
+    const u = await getUserFromIdp(email);
+    if (!u) {
+      logEvent("warn", "idp_prefill_user_not_found_in_idp", { email_hint: email.slice(0, 3) + "***" });
+      return { configured: true, found: false, data: EMPTY };
+    }
     return {
       configured: true,
       found: true,

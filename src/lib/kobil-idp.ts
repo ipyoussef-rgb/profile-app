@@ -73,14 +73,21 @@ export type KobilIdpUser = {
   attributes?: Record<string, string[] | string | undefined>;
 };
 
-export async function getUserFromIdp(sub: string): Promise<KobilIdpUser | null> {
-  const token = await getServiceToken();
+/** KOBIL custom Users API. Per the tenant docs, the endpoint is
+ *  `{issuer}/v3_user/{email}` — keyed by email, not by UUID sub. Override
+ *  via KOBIL_IDP_USERS_API if the tenant exposes a different base path. */
+function defaultUsersBase(issuer: string): string {
+  return `${issuer.replace(/\/$/, "")}/v3_user`;
+}
+
+function usersBase(): string {
   const e = env();
-  const base = (e.KOBIL_IDP_USERS_API ?? `${e.KOBIL_IDP_ISSUER.replace(/\/$/, "")}/users`).replace(
-    /\/$/,
-    "",
-  );
-  const url = `${base}/${encodeURIComponent(sub)}`;
+  return (e.KOBIL_IDP_USERS_API ?? defaultUsersBase(e.KOBIL_IDP_ISSUER)).replace(/\/$/, "");
+}
+
+export async function getUserFromIdp(email: string): Promise<KobilIdpUser | null> {
+  const token = await getServiceToken();
+  const url = `${usersBase()}/${encodeURIComponent(email)}`;
 
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 8000);
@@ -93,12 +100,27 @@ export async function getUserFromIdp(sub: string): Promise<KobilIdpUser | null> 
   } finally {
     clearTimeout(timeout);
   }
-  if (res.status === 404) return null;
+  if (res.status === 404) {
+    logEvent("warn", "kobil_get_user_404", { url });
+    return null;
+  }
   if (!res.ok) {
-    logEvent("warn", "kobil_get_user_failed", { status: res.status });
+    let body = "";
+    try {
+      body = (await res.text()).slice(0, 300);
+    } catch {
+      /* ignore */
+    }
+    logEvent("warn", "kobil_get_user_failed", { status: res.status, url, body });
     throw new Error(`KOBIL getUserInfo returned ${res.status}`);
   }
-  return (await res.json()) as KobilIdpUser;
+  const json = (await res.json()) as KobilIdpUser;
+  // Diagnostic — logs only key NAMES, never values, so PII stays out of logs.
+  logEvent("info", "kobil_get_user_ok", {
+    top_keys: Object.keys(json),
+    attribute_keys: json.attributes ? Object.keys(json.attributes) : [],
+  });
+  return json;
 }
 
 export type KobilIdpUserPatch = Partial<{
@@ -108,15 +130,11 @@ export type KobilIdpUserPatch = Partial<{
   attributes: Record<string, string[]>;
 }>;
 
-export async function updateUserInIdp(sub: string, patch: KobilIdpUserPatch): Promise<void> {
+export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): Promise<void> {
   const token = await getServiceToken();
-  const e = env();
-  const base = (e.KOBIL_IDP_USERS_API ?? `${e.KOBIL_IDP_ISSUER.replace(/\/$/, "")}/users`).replace(
-    /\/$/,
-    "",
-  );
-  const url = `${base}/${encodeURIComponent(sub)}`;
+  const url = `${usersBase()}/${encodeURIComponent(email)}`;
 
+  // KOBIL Users API: PATCH `/v3_user/{email}` with a partial body.
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 8000);
   let res: Response;
@@ -140,7 +158,7 @@ export async function updateUserInIdp(sub: string, patch: KobilIdpUserPatch): Pr
     } catch {
       /* ignore */
     }
-    logEvent("warn", "kobil_update_user_failed", { status: res.status, body: text.slice(0, 200) });
+    logEvent("warn", "kobil_update_user_failed", { status: res.status, url, body: text.slice(0, 200) });
     throw new Error(`KOBIL updateProfileUser returned ${res.status}`);
   }
 }

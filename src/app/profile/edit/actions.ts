@@ -131,8 +131,15 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   }
   if (Object.keys(attrs).length > 0) idpPatch.attributes = attrs;
 
+  if (!user.email) {
+    return {
+      ok: false,
+      error:
+        "KOBIL Users API requires an email; your session has no email claim. Sign out + sign in to refresh.",
+    };
+  }
   try {
-    await updateUserInIdp(user.sub, idpPatch);
+    await updateUserInIdp(user.email, idpPatch);
   } catch (err) {
     if (err instanceof KobilIdpNotConfiguredError) {
       return {

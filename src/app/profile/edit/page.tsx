@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function EditProfilePage() {
   const user = await requireUserOrRedirect("/profile/edit");
-  const [row, idp] = await Promise.all([getProfile(user.sub), loadIdpProfile(user.sub)]);
+  const [row, idp] = await Promise.all([getProfile(user.sub), loadIdpProfile(user.email)]);
 
   if (!idp.configured) {
     idp.data.username = user.preferred_username ?? null;

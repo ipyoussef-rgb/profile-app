@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const user = await requireUser();
-    const idp = await getUserFromIdp(user.sub);
+    if (!user.email) return json({ found: false, reason: "no_email_in_session" });
+    const idp = await getUserFromIdp(user.email);
     if (!idp) return json({ found: false });
 
     return json({

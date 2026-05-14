@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProfileOverviewPage() {
   const user = await requireUserOrRedirect("/profile");
-  const [row, idp] = await Promise.all([getProfile(user.sub), loadIdpProfile(user.sub)]);
+  const [row, idp] = await Promise.all([getProfile(user.sub), loadIdpProfile(user.email)]);
 
   await audit({
     user_id: user.sub,
