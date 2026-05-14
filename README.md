@@ -112,11 +112,18 @@ Open <http://localhost:3000>.
 
 ## Vercel deployment
 
+The repo includes a `vercel.json` that runs `prisma migrate deploy` as part of
+the Vercel build, so the database schema is created/updated automatically on
+every deploy. If `DATABASE_URL` is missing or unreachable, the build prints a
+warning and continues (the site boots; DB-backed routes 500 until you fix
+`DATABASE_URL`).
+
 1. **Push** this repo to GitHub.
-2. **Import** the project at <https://vercel.com/new>.
+2. **Import** the project at <https://vercel.com/new> (or use the *Deploy with
+   Vercel* button above).
 3. **Provision Neon Postgres**: in the Vercel project → *Storage* → *Create
    Database* → *Neon*. Vercel auto-injects `DATABASE_URL` (pooled) and a
-   `*_URL_NON_POOLING` (use this for `DIRECT_DATABASE_URL`).
+   `DATABASE_URL_UNPOOLED` / `*_URL_NON_POOLING` variant.
 4. **Set environment variables** in the Vercel project settings:
    - `KOBIL_IDP_ISSUER`
    - `KOBIL_MINIAPP_CLIENT_ID`
@@ -124,16 +131,13 @@ Open <http://localhost:3000>.
    - `AUTH_SECRET` (generate with `openssl rand -base64 48`)
    - `APP_BASE_URL` = your production domain (e.g.
      `https://profile-app.vercel.app`)
-   - `DIRECT_DATABASE_URL` (paste the `*_URL_NON_POOLING` value)
+   - `DIRECT_DATABASE_URL` (paste the `*_URL_NON_POOLING` value — used by
+     `prisma migrate deploy`)
    - `PRIVACY_NOTICE_VERSION=2026-05-14`
 5. **Register the redirect URI** in KOBIL Identity:
    `https://<your-vercel-domain>/api/auth/callback`.
-6. **Run migrations** once after the first deploy:
-   ```bash
-   npx vercel env pull .env.production.local
-   npx prisma migrate deploy
-   ```
-7. **Redeploy**. Visit your domain → it redirects to `/api/auth/login` →
+6. **Redeploy**. The build runs `prisma migrate deploy`, creating the schema on
+   the first deploy. Visit your domain → it redirects to `/api/auth/login` →
    KOBIL Identity → back to `/profile`.
 
 ## Security & GDPR posture
