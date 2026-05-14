@@ -4,11 +4,13 @@ import { decodeJwt } from "jose";
 import { env } from "@/lib/env";
 import { getOidcConfig, redirectUri } from "@/lib/oidc";
 import {
-  clearOidcStateCookie,
+  OIDC_STATE_COOKIE,
+  SESSION_COOKIE,
   readOidcStateCookie,
-  setSessionCookie,
   signSession,
 } from "@/lib/session";
+
+const USER_SESSION_TTL_SECONDS = 60 * 60 * 8;
 import { logEvent } from "@/lib/safe-log";
 
 function extractRoles(
@@ -124,10 +126,19 @@ export async function GET(req: NextRequest) {
     at_exp: tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : undefined,
   });
 
-  await setSessionCookie(session);
-  await clearOidcStateCookie();
-
   const returnTo =
     stateBag.returnTo && stateBag.returnTo.startsWith("/") ? stateBag.returnTo : "/profile";
-  return NextResponse.redirect(new URL(returnTo, env().APP_BASE_URL));
+
+  // Set cookies directly on the redirect response (see admin callback for the
+  // Next.js 15 quirk this avoids).
+  const response = NextResponse.redirect(new URL(returnTo, env().APP_BASE_URL));
+  response.cookies.set(SESSION_COOKIE, session, {
+    httpOnly: true,
+    secure: env().APP_BASE_URL.startsWith("https://"),
+    sameSite: "lax",
+    path: "/",
+    maxAge: USER_SESSION_TTL_SECONDS,
+  });
+  response.cookies.delete(OIDC_STATE_COOKIE);
+  return response;
 }

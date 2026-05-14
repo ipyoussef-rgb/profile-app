@@ -4,12 +4,14 @@ import { decodeJwt } from "jose";
 import { env } from "@/lib/env";
 import { getAdminOidcConfig, adminRedirectUri } from "@/lib/admin-oidc";
 import {
-  clearAdminOidcStateCookie,
+  ADMIN_OIDC_STATE_COOKIE,
+  ADMIN_SESSION_COOKIE,
   readAdminOidcStateCookie,
-  setAdminSessionCookie,
   signAdminSession,
 } from "@/lib/admin-session";
 import { logEvent } from "@/lib/safe-log";
+
+const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 4;
 
 // Keycloak puts realm_access.roles in the access token by default but NOT in
 // the ID token unless the client has the matching mapper enabled. Read both
@@ -111,18 +113,27 @@ export async function GET(req: NextRequest) {
     at_exp: tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : undefined,
   });
 
-  await setAdminSessionCookie(session);
-  await clearAdminOidcStateCookie();
-
-  // If the admin role is missing, log them in but route to /admin/forbidden so they
-  // get a clear message rather than a silent redirect loop.
   const requiredRole = env().KOBIL_ADMIN_ROLE;
   const hasRole = roles?.includes(requiredRole) ?? false;
-  const returnTo = hasRole
+  const target = hasRole
     ? stateBag.returnTo && stateBag.returnTo.startsWith("/admin")
       ? stateBag.returnTo
       : "/admin"
-    : "/admin/forbidden";
+    : "/access-denied";
 
-  return NextResponse.redirect(new URL(returnTo, env().APP_BASE_URL));
+  // CRITICAL: attach cookies directly to the redirect Response. In Next.js 15,
+  // cookies set via `cookies().set()` from next/headers don't always survive
+  // when the handler returns a fresh NextResponse — the redirect goes out
+  // without the Set-Cookie, and the next request loops back through the OIDC
+  // flow because the role gate finds no session.
+  const response = NextResponse.redirect(new URL(target, env().APP_BASE_URL));
+  response.cookies.set(ADMIN_SESSION_COOKIE, session, {
+    httpOnly: true,
+    secure: env().APP_BASE_URL.startsWith("https://"),
+    sameSite: "lax",
+    path: "/",
+    maxAge: ADMIN_SESSION_TTL_SECONDS,
+  });
+  response.cookies.delete(ADMIN_OIDC_STATE_COOKIE);
+  return response;
 }
