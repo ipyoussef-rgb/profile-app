@@ -9,7 +9,7 @@ import {
   readAdminOidcStateCookie,
   signAdminSession,
 } from "@/lib/admin-session";
-import { logEvent } from "@/lib/safe-log";
+import { describeError, logEvent } from "@/lib/safe-log";
 
 const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 4;
 
@@ -80,8 +80,9 @@ export async function GET(req: NextRequest) {
       expectedNonce: stateBag.nonce,
     });
   } catch (e) {
+    const detail = await describeError(e);
     return fail("authorization_code_grant_failed", {
-      message: e instanceof Error ? e.message : String(e),
+      ...detail,
       redirect_uri_sent: adminRedirectUri(),
     });
   }

@@ -11,7 +11,7 @@ import {
 } from "@/lib/session";
 
 const USER_SESSION_TTL_SECONDS = 60 * 60 * 8;
-import { logEvent } from "@/lib/safe-log";
+import { describeError, logEvent } from "@/lib/safe-log";
 
 function extractRoles(
   idClaims: Record<string, unknown> | undefined,
@@ -91,8 +91,9 @@ export async function GET(req: NextRequest) {
       expectedNonce: stateBag.nonce,
     });
   } catch (e) {
+    const detail = await describeError(e);
     return failOidc("authorization_code_grant_failed", {
-      message: e instanceof Error ? e.message : String(e),
+      ...detail,
       redirect_uri_sent: redirectUri(),
     });
   }
