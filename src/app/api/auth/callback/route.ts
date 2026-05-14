@@ -8,23 +8,49 @@ import {
   setSessionCookie,
   signSession,
 } from "@/lib/session";
+import { logEvent } from "@/lib/safe-log";
 
 export const dynamic = "force-dynamic";
+
+function failOidc(reason: string, detail: Record<string, unknown> = {}, status = 400) {
+  logEvent("warn", "oidc_callback_failed", { reason, ...detail });
+  return new NextResponse(`OIDC callback failed: ${reason}`, { status });
+}
 
 export async function GET(req: NextRequest) {
   if (env().PROFILE_EMBED_MODE) {
     return new NextResponse("OIDC callback is disabled in embedded mode.", { status: 404 });
   }
 
+  // Echo the raw query params the IdP sent so we can see whether KOBIL
+  // returned a code (success) or an error= param (rejected before reaching us).
+  const qpHasCode = req.nextUrl.searchParams.has("code");
+  const qpError = req.nextUrl.searchParams.get("error");
+  const qpErrorDescription = req.nextUrl.searchParams.get("error_description");
+  if (qpError) {
+    return failOidc("idp_error_in_query", {
+      error: qpError,
+      error_description: qpErrorDescription,
+    });
+  }
+  if (!qpHasCode) {
+    return failOidc("no_code_in_query", {
+      params: Array.from(req.nextUrl.searchParams.keys()),
+    });
+  }
+
   const stateRaw = await readOidcStateCookie();
   if (!stateRaw) {
-    return new NextResponse("Missing OIDC state cookie. Please sign in again.", { status: 400 });
+    return failOidc("missing_state_cookie", {
+      cookie_names: req.cookies.getAll().map((c) => c.name),
+      app_base_url: env().APP_BASE_URL,
+    });
   }
   let stateBag: { codeVerifier: string; state: string; nonce: string; returnTo: string };
   try {
     stateBag = JSON.parse(stateRaw);
   } catch {
-    return new NextResponse("Corrupt OIDC state cookie.", { status: 400 });
+    return failOidc("corrupt_state_cookie");
   }
 
   const config = await getOidcConfig();
@@ -37,15 +63,15 @@ export async function GET(req: NextRequest) {
       expectedNonce: stateBag.nonce,
     });
   } catch (e) {
-    return new NextResponse(
-      `OIDC authorization failed: ${e instanceof Error ? e.message : "unknown error"}`,
-      { status: 400 },
-    );
+    return failOidc("authorization_code_grant_failed", {
+      message: e instanceof Error ? e.message : String(e),
+      redirect_uri_sent: redirectUri(),
+    });
   }
 
   const claims = tokens.claims();
   if (!claims) {
-    return new NextResponse("OIDC tokens missing claims.", { status: 400 });
+    return failOidc("tokens_missing_claims");
   }
 
   const sub = claims.sub as string;
@@ -60,7 +86,7 @@ export async function GET(req: NextRequest) {
 
   const accessToken = tokens.access_token;
   if (!accessToken) {
-    return new NextResponse("OIDC response missing access_token.", { status: 400 });
+    return failOidc("missing_access_token");
   }
 
   const session = await signSession({
