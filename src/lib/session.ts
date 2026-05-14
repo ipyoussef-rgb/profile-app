@@ -13,9 +13,6 @@ export type SessionPayload = {
   email?: string;
   email_verified?: boolean;
   roles?: string[];
-  access_token: string;
-  // access_token expiry (seconds since epoch)
-  at_exp?: number;
 };
 
 function key() {

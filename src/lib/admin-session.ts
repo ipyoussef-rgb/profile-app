@@ -12,8 +12,6 @@ export type AdminSessionPayload = {
   preferred_username?: string;
   email?: string;
   roles?: string[];
-  access_token: string;
-  at_exp?: number;
 };
 
 function key() {

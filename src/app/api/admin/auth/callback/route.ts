@@ -97,8 +97,9 @@ export async function GET(req: NextRequest) {
   const accessToken = tokens.access_token;
   if (!accessToken) return fail("missing_access_token");
 
+  // Roles come from the access token; the token itself is NOT persisted in
+  // the session cookie (keeps it well under the 4KB browser limit).
   const roles = extractRoles(claims as Record<string, unknown>, accessToken);
-  // Telemetry — visible in Vercel runtime logs, helps debugging role gating.
   logEvent("info", "admin_oidc_callback_ok", {
     sub,
     role_count: roles?.length ?? 0,
@@ -110,8 +111,6 @@ export async function GET(req: NextRequest) {
     preferred_username,
     email,
     roles,
-    access_token: accessToken,
-    at_exp: tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : undefined,
   });
 
   const requiredRole = env().KOBIL_ADMIN_ROLE;

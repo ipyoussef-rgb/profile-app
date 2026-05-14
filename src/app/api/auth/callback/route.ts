@@ -115,6 +115,7 @@ export async function GET(req: NextRequest) {
     return failOidc("missing_access_token");
   }
 
+  // Roles come from the access token; the token itself is NOT persisted.
   const roles = extractRoles(claims as Record<string, unknown>, accessToken);
 
   const session = await signSession({
@@ -123,8 +124,6 @@ export async function GET(req: NextRequest) {
     email,
     email_verified,
     roles,
-    access_token: accessToken,
-    at_exp: tokens.expires_in ? Math.floor(Date.now() / 1000) + tokens.expires_in : undefined,
   });
 
   const returnTo =
