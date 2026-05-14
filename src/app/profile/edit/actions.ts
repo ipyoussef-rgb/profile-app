@@ -6,6 +6,7 @@ import { audit } from "@/lib/audit";
 import { requireUser } from "@/lib/current-user";
 import { upsertProfile } from "@/lib/profile-service";
 import {
+  birthdateIsoToKobil,
   FORBIDDEN_PROFILE_KEYS,
   idpProfileUpdateSchema,
   profileUpdateSchema,
@@ -122,7 +123,11 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   const attrs: Record<string, string[]> = {};
   if (patch.phone !== undefined) attrs.phone = [patch.phone];
   if (patch.locale !== undefined) attrs.locale = [patch.locale];
-  if (patch.birthdate !== undefined) attrs.birthdate = [patch.birthdate];
+  if (patch.birthdate !== undefined) {
+    // Form submits ISO YYYY-MM-DD; KOBIL stores DD.MM.YYYY.
+    const kobilDate = birthdateIsoToKobil(patch.birthdate);
+    if (kobilDate) attrs.birthdate = [kobilDate];
+  }
   if (patch.address) {
     if (patch.address.street !== undefined) attrs.street = [patch.address.street];
     if (patch.address.locality !== undefined) attrs.locality = [patch.address.locality];

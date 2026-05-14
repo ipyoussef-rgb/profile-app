@@ -8,7 +8,7 @@ import {
   updateUserInIdp,
 } from "@/lib/kobil-idp";
 import { logEvent } from "@/lib/safe-log";
-import { idpProfileUpdateSchema } from "@/lib/schemas/profile";
+import { birthdateIsoToKobil, idpProfileUpdateSchema } from "@/lib/schemas/profile";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +45,10 @@ export async function PATCH(req: NextRequest) {
     const attrs: Record<string, string[]> = {};
     if (patch.phone !== undefined) attrs.phone = [patch.phone];
     if (patch.locale !== undefined) attrs.locale = [patch.locale];
-    if (patch.birthdate !== undefined) attrs.birthdate = [patch.birthdate];
+    if (patch.birthdate !== undefined) {
+      const kobilDate = birthdateIsoToKobil(patch.birthdate);
+      if (kobilDate) attrs.birthdate = [kobilDate];
+    }
     if (patch.address) {
       if (patch.address.street !== undefined) attrs.street = [patch.address.street];
       if (patch.address.locality !== undefined) attrs.locality = [patch.address.locality];

@@ -86,7 +86,10 @@ export function Overview({
             />
             <Row label={t.fields.phone} value={idp.data.phone} />
             <Row label={t.fields.locale} value={idp.data.locale} />
-            <Row label={t.fields.birthdate} value={idp.data.birthdate} />
+            <Row
+              label={t.fields.birthdate}
+              value={formatBirthdateForDisplay(idp.data.birthdate, locale)}
+            />
             <Row
               label={t.fields.address}
               value={formatAddress(idp.data.address, locale)}
@@ -133,6 +136,18 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <dd className="text-[var(--color-kobil-text)]">{value || "—"}</dd>
     </div>
   );
+}
+
+function formatBirthdateForDisplay(
+  iso: string | null | undefined,
+  locale: Locale,
+): string | null {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  return locale === "de"
+    ? `${m[3]}.${m[2]}.${m[1]}`
+    : `${m[1]}-${m[2]}-${m[3]}`;
 }
 
 function formatAddress(

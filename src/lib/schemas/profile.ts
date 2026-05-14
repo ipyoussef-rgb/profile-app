@@ -99,21 +99,44 @@ export const FORBIDDEN_PROFILE_KEYS = [
   "lastName",
 ] as const;
 
-/** Compute age-over-N booleans from a YYYY-MM-DD birthdate, server-side.
- *  We never store the birthdate locally — this runs each render off the
- *  IDP getUserInfo response. */
+/** Parse a birthdate in either DD.MM.YYYY (KOBIL's stored format) or
+ *  YYYY-MM-DD (HTML date input format) into {y, m, d}. */
+function parseBirthdate(s: string): { y: number; m: number; d: number } | null {
+  let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (m) return { y: +m[1]!, m: +m[2]!, d: +m[3]! };
+  m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+  if (m) return { y: +m[3]!, m: +m[2]!, d: +m[1]! };
+  return null;
+}
+
+/** Convert KOBIL DD.MM.YYYY → ISO YYYY-MM-DD for the HTML date input. */
+export function birthdateToIsoForInput(s: string | null | undefined): string | null {
+  if (!s) return null;
+  const p = parseBirthdate(s);
+  if (!p) return null;
+  return `${String(p.y).padStart(4, "0")}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
+}
+
+/** Convert HTML date input (YYYY-MM-DD) → KOBIL DD.MM.YYYY for write. */
+export function birthdateIsoToKobil(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const p = parseBirthdate(iso);
+  if (!p) return null;
+  return `${String(p.d).padStart(2, "0")}.${String(p.m).padStart(2, "0")}.${String(p.y).padStart(4, "0")}`;
+}
+
+/** Compute age-over-N booleans from a birthdate (any supported format).
+ *  Server-side derived each render — birthdate itself is never stored locally. */
 export function ageOverFromBirthdate(
   birthdate: string | null | undefined,
 ): { over_16: boolean | null; over_18: boolean | null } {
-  if (!birthdate || !/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) {
-    return { over_16: null, over_18: null };
-  }
-  const [y, m, d] = birthdate.split("-").map((n) => parseInt(n, 10));
-  if (!y || !m || !d) return { over_16: null, over_18: null };
+  if (!birthdate) return { over_16: null, over_18: null };
+  const p = parseBirthdate(birthdate);
+  if (!p) return { over_16: null, over_18: null };
   const now = new Date();
   const age =
     now.getUTCFullYear() -
-    y -
-    (now.getUTCMonth() + 1 < m || (now.getUTCMonth() + 1 === m && now.getUTCDate() < d) ? 1 : 0);
+    p.y -
+    (now.getUTCMonth() + 1 < p.m || (now.getUTCMonth() + 1 === p.m && now.getUTCDate() < p.d) ? 1 : 0);
   return { over_16: age >= 16, over_18: age >= 18 };
 }

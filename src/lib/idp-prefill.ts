@@ -8,6 +8,7 @@ import {
   KobilIdpNotConfiguredError,
   readIdpAttribute,
 } from "./kobil-idp";
+import { birthdateToIsoForInput } from "./schemas/profile";
 import { logEvent } from "./safe-log";
 
 export type IdpProfileSnapshot = {
@@ -64,7 +65,13 @@ export async function loadIdpProfile(email: string | undefined): Promise<IdpProf
         email_verified: u.emailVerified ?? null,
         phone: readIdpAttribute(u, "phone", "phone_number", "phoneNumber") ?? null,
         locale: readIdpAttribute(u, "locale") ?? null,
-        birthdate: readIdpAttribute(u, "birthdate", "bod", "birthDate") ?? null,
+        // KOBIL stores birthdate as DD.MM.YYYY — normalize to ISO so the
+        // HTML <input type="date"> can prefill correctly. The age helper
+        // accepts both formats.
+        birthdate:
+          birthdateToIsoForInput(
+            readIdpAttribute(u, "birthdate", "bod", "birthDate"),
+          ) ?? null,
         address: {
           street: readIdpAttribute(u, "street", "street_address") ?? null,
           locality: readIdpAttribute(u, "locality", "city") ?? null,

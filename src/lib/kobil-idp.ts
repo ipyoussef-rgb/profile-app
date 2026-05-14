@@ -86,16 +86,24 @@ export async function getServiceToken(): Promise<string> {
   return cached.token;
 }
 
-/** Defensive shape — many tenants emit attributes flat or wrapped under
- *  `attributes.{key}[0]`. We normalize a small set of fields used by prefill. */
+/** KOBIL response shape. Per Postman test 2026-05-15, KOBIL wraps the actual
+ *  user object in `{ message, status, subSystem, data: {…} }`. The fields
+ *  below describe the inner `data` payload — getUserFromIdp() unwraps it. */
 export type KobilIdpUser = {
-  id: string;
+  id?: string;
   username?: string;
   email?: string;
   emailVerified?: boolean;
   firstName?: string;
   lastName?: string;
+  admin?: boolean;
   attributes?: Record<string, string[] | string | undefined>;
+};
+
+type KobilApiEnvelope = {
+  message?: string;
+  status?: string;
+  data?: KobilIdpUser;
 };
 
 /** KOBIL custom Users API. Per the tenant docs, the endpoint is
@@ -139,13 +147,17 @@ export async function getUserFromIdp(email: string): Promise<KobilIdpUser | null
     logEvent("warn", "kobil_get_user_failed", { status: res.status, url, body });
     throw new Error(`KOBIL getUserInfo returned ${res.status}`);
   }
-  const json = (await res.json()) as KobilIdpUser;
-  // Diagnostic — logs only key NAMES, never values, so PII stays out of logs.
+  const raw = (await res.json()) as KobilApiEnvelope | KobilIdpUser;
+  // Unwrap KOBIL's `{ message, status, data: { … } }` envelope. Fall back to
+  // a raw user object if a tenant returns the user directly (defensive).
+  const user: KobilIdpUser = (raw as KobilApiEnvelope).data ?? (raw as KobilIdpUser);
+
   logEvent("info", "kobil_get_user_ok", {
-    top_keys: Object.keys(json),
-    attribute_keys: json.attributes ? Object.keys(json.attributes) : [],
+    envelope_keys: Object.keys(raw as Record<string, unknown>),
+    top_keys: Object.keys(user),
+    attribute_keys: user.attributes ? Object.keys(user.attributes) : [],
   });
-  return json;
+  return user;
 }
 
 export type KobilIdpUserPatch = Partial<{
