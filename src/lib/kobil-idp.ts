@@ -6,6 +6,7 @@
 //   https://developer.kobil.com/api/idp#tag/Users/operation/getUserInfo
 //   https://developer.kobil.com/api/idp#tag/Users/operation/updateProfileUser
 
+import { decodeJwt } from "jose";
 import { env } from "./env";
 import { logEvent } from "./safe-log";
 
@@ -58,6 +59,30 @@ export async function getServiceToken(): Promise<string> {
   }
   const json = (await res.json()) as { access_token: string; expires_in: number };
   cached = { token: json.access_token, expiresAt: now + (json.expires_in ?? 300) };
+
+  // One-shot diagnostic per fresh token: dump audience, scope, azp, and the
+  // resource_access role map (key NAMES + role NAMES only — no PII). Helps
+  // figure out which permission the v3_user endpoint expects when it 401s.
+  try {
+    const payload = decodeJwt(json.access_token) as Record<string, unknown>;
+    const ra = payload["realm_access"] as { roles?: string[] } | undefined;
+    const resa = payload["resource_access"] as Record<string, { roles?: string[] }> | undefined;
+    logEvent("info", "kobil_service_token_issued", {
+      aud: payload["aud"],
+      azp: payload["azp"],
+      scope: payload["scope"],
+      iss: payload["iss"],
+      realm_roles: ra?.roles ?? [],
+      resource_access_keys: resa ? Object.keys(resa) : [],
+      resource_access_roles: resa
+        ? Object.fromEntries(
+            Object.entries(resa).map(([k, v]) => [k, v?.roles ?? []]),
+          )
+        : {},
+    });
+  } catch {
+    /* token isn't a JWT (opaque) — nothing to log */
+  }
   return cached.token;
 }
 
