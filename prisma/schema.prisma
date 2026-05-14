@@ -8,9 +8,13 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
+  // Runtime uses the pooled URL (good for serverless cold starts).
+  // Migrations use the direct/unpooled URL because pgbouncer in transaction
+  // mode can't take advisory locks. Both are auto-injected by Vercel's
+  // Neon integration — no manual copy needed.
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // user_id == KOBIL Identity `sub` (UUID).

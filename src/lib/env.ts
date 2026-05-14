@@ -11,7 +11,6 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 chars"),
   APP_BASE_URL: z.string().url(),
   DATABASE_URL: z.string().min(1),
-  DIRECT_DATABASE_URL: z.string().min(1).optional(),
   PRIVACY_NOTICE_VERSION: z.string().default("2026-05-14"),
   PROFILE_EMBED_MODE: z
     .union([z.literal("1"), z.literal("")])
