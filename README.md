@@ -1,5 +1,7 @@
 # profile-app
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fipyoussef-rgb%2Fprofile-app&env=KOBIL_IDP_ISSUER,KOBIL_MINIAPP_CLIENT_ID,KOBIL_MINIAPP_CLIENT_SECRET,AUTH_SECRET,APP_BASE_URL,DIRECT_DATABASE_URL,PRIVACY_NOTICE_VERSION&envDescription=See%20README%20%23%23%20KOBIL%20Identity%20section%20for%20what%20each%20variable%20is.&envLink=https%3A%2F%2Fgithub.com%2Fipyoussef-rgb%2Fprofile-app%23environment-variables&project-name=profile-app&repository-name=profile-app)
+
 A GDPR-aware User Profile miniapp for the KOBIL superapp.
 
 KOBIL Identity is the source of truth for authentication and identity data.
