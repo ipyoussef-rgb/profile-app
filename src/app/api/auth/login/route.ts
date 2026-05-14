@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as client from "openid-client";
 import { env } from "@/lib/env";
 import { getOidcConfig, redirectUri } from "@/lib/oidc";
-import { setOidcStateCookie } from "@/lib/session";
+import { OIDC_STATE_COOKIE } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -39,10 +39,6 @@ export async function GET(req: NextRequest) {
   const state = client.randomState();
   const nonce = client.randomNonce();
 
-  await setOidcStateCookie(
-    JSON.stringify({ codeVerifier, state, nonce, returnTo }),
-  );
-
   const authParams: Record<string, string> = {
     redirect_uri: redirectUri(),
     scope: "openid profile email",
@@ -54,7 +50,23 @@ export async function GET(req: NextRequest) {
   if (kc_action) {
     authParams.kc_action = kc_action;
   }
-
   const authUrl = client.buildAuthorizationUrl(config, authParams);
-  return NextResponse.redirect(authUrl);
+
+  // Attach the state cookie directly to the redirect response — Next.js 15's
+  // cookies().set() from next/headers doesn't reliably ship Set-Cookie
+  // alongside a fresh NextResponse.redirect(), which causes
+  // `missing_state_cookie` on the way back from the IdP.
+  const response = NextResponse.redirect(authUrl);
+  response.cookies.set(
+    OIDC_STATE_COOKIE,
+    JSON.stringify({ codeVerifier, state, nonce, returnTo }),
+    {
+      httpOnly: true,
+      secure: env().APP_BASE_URL.startsWith("https://"),
+      sameSite: "lax",
+      path: "/",
+      maxAge: 10 * 60,
+    },
+  );
+  return response;
 }
