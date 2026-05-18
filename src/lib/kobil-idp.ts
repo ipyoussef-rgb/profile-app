@@ -171,13 +171,15 @@ export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): 
   const token = await getServiceToken();
   const url = `${usersBase()}/${encodeURIComponent(email)}`;
 
-  // KOBIL Users API: PATCH `/v3_user/{email}` with a partial body.
+  // KOBIL Users API: PUT `/v3_user/{email}` with a partial body. The KOBIL
+  // docs label this "updateProfileUser"; the endpoint returns 405 on PATCH
+  // (verified 2026-05-18) but accepts PUT.
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 8000);
   let res: Response;
   try {
     res = await fetch(url, {
-      method: "PATCH",
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -195,7 +197,15 @@ export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): 
     } catch {
       /* ignore */
     }
-    logEvent("warn", "kobil_update_user_failed", { status: res.status, url, body: text.slice(0, 200) });
+    // On 405 surface the Allow header so we know exactly which verbs the
+    // endpoint accepts — saves a guessing round-trip next time.
+    const allow = res.status === 405 ? res.headers.get("allow") : undefined;
+    logEvent("warn", "kobil_update_user_failed", {
+      status: res.status,
+      url,
+      body: text.slice(0, 200),
+      ...(allow ? { allow } : {}),
+    });
     throw new Error(`KOBIL updateProfileUser returned ${res.status}`);
   }
 }
