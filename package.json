@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && (PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 prisma migrate deploy || echo '!! prisma migrate deploy failed — set PROFILE_URL in the Vercel project and redeploy. Continuing build.') && next build",
+    "vercel-build": "prisma generate && (prisma migrate deploy || echo '!! prisma migrate deploy failed — set PROFILE_DATABASE_URL + PROFILE_DATABASE_URL_UNPOOLED in the Vercel project and redeploy. Continuing build.') && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

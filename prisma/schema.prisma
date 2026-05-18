@@ -9,11 +9,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Single URL for both runtime and migrations. PROFILE_URL points at Neon
-  // (pooler is fine for app queries). Migrations work against pgbouncer
-  // because we disable Prisma's advisory locks via the env var
-  // PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 set in vercel-build.
-  url = env("PROFILE_URL")
+  // Vercel-Neon integration with prefix "PROFILE" injects these names:
+  //   PROFILE_DATABASE_URL          (pooled, for runtime)
+  //   PROFILE_DATABASE_URL_UNPOOLED (direct, for migrations)
+  url       = env("PROFILE_DATABASE_URL")
+  directUrl = env("PROFILE_DATABASE_URL_UNPOOLED")
 }
 
 // user_id == KOBIL Identity `sub` (UUID).
