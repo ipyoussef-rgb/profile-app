@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import * as client from "openid-client";
 import { env } from "@/lib/env";
 import { getOidcConfig, postLogoutRedirectUri } from "@/lib/oidc";
@@ -6,7 +6,13 @@ import { clearSessionCookie, getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Next.js prefetches <Link> targets — without this guard a hover or
+  // viewport-entry on the "Sign out" link silently destroys the session.
+  if (req.headers.get("rsc") || req.headers.get("next-router-prefetch")) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const session = await getSession();
   await clearSessionCookie();
 

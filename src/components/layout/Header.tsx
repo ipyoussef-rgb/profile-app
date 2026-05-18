@@ -52,7 +52,7 @@ export function Header({
             </span>
           ) : null}
           <Link
-            href="/api/auth/logout"
+            href="/api/auth/logout" prefetch={false}
             className="hidden rounded-[var(--radius-kobil)] border border-[var(--color-kobil-border)] px-3 py-1 text-[var(--color-kobil-text-muted)] hover:bg-[var(--color-kobil-surface-muted)] md:inline-block"
           >
             {t.nav.logout}
@@ -89,7 +89,7 @@ export function Header({
             ))}
             <li className="border-t border-[var(--color-kobil-border)]">
               <Link
-                href="/api/auth/logout"
+                href="/api/auth/logout" prefetch={false}
                 className="block py-2 text-[var(--color-kobil-text-muted)]"
               >
                 {t.nav.logout}
