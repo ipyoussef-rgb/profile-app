@@ -16,7 +16,7 @@ type Result = { ok: true; id?: string } | { ok: false; error: string };
 
 type AdminContext =
   | { ok: true; admin: Awaited<ReturnType<typeof requireAdmin>> }
-  | { ok: false; error: `unauthorized:${"no_session" | "missing_role"}` };
+  | { ok: false; error: `unauthorized:${"no_cookie" | "invalid_session" | "missing_role"}` };
 
 async function adminContext(): Promise<AdminContext> {
   try {
