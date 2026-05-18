@@ -44,7 +44,7 @@ export function AdminHeader({ username }: { username?: string | null }) {
             </span>
           ) : null}
           <Link
-            href="/api/admin/auth/logout"
+            href="/api/admin/auth/logout" prefetch={false}
             className="hidden rounded-[var(--radius-kobil)] border border-[var(--color-kobil-border)] px-3 py-1 text-[var(--color-kobil-text-muted)] hover:bg-[var(--color-kobil-surface-muted)] md:inline-block"
           >
             Sign out
@@ -81,7 +81,7 @@ export function AdminHeader({ username }: { username?: string | null }) {
             ))}
             <li className="border-t border-[var(--color-kobil-border)]">
               <Link
-                href="/api/admin/auth/logout"
+                href="/api/admin/auth/logout" prefetch={false}
                 className="block py-2 text-[var(--color-kobil-text-muted)]"
               >
                 Sign out
