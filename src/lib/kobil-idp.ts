@@ -168,12 +168,19 @@ export type KobilIdpUserPatch = Partial<{
 }>;
 
 export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): Promise<void> {
-  const token = await getServiceToken();
-  const url = `${usersBase()}/${encodeURIComponent(email)}`;
+  // KOBIL `updateUser` is keyed by the user UUID, not email:
+  //   PUT {issuer}/v3_user/{userId}/update
+  // Resolve email → id via getUserFromIdp first. (`/v3_user/{email}` with no
+  // suffix returns 405 on every write verb — verified 2026-05-18.)
+  const existing = await getUserFromIdp(email);
+  if (!existing?.id) {
+    logEvent("warn", "kobil_update_user_no_id", { email_present: Boolean(email) });
+    throw new Error("KOBIL updateUser: could not resolve user id from email");
+  }
 
-  // KOBIL Users API: PUT `/v3_user/{email}` with a partial body. The KOBIL
-  // docs label this "updateProfileUser"; the endpoint returns 405 on PATCH
-  // (verified 2026-05-18) but accepts PUT.
+  const token = await getServiceToken();
+  const url = `${usersBase()}/${encodeURIComponent(existing.id)}/update`;
+
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 8000);
   let res: Response;
