@@ -168,18 +168,11 @@ export type KobilIdpUserPatch = Partial<{
 }>;
 
 export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): Promise<void> {
-  // KOBIL `updateUser` is keyed by the user UUID, not email:
-  //   PUT {issuer}/v3_user/{userId}/update
-  // Resolve email → id via getUserFromIdp first. (`/v3_user/{email}` with no
-  // suffix returns 405 on every write verb — verified 2026-05-18.)
-  const existing = await getUserFromIdp(email);
-  if (!existing?.id) {
-    logEvent("warn", "kobil_update_user_no_id", { email_present: Boolean(email) });
-    throw new Error("KOBIL updateUser: could not resolve user id from email");
-  }
-
+  // KOBIL `updateUser`: PUT {issuer}/v3_user/{email}/update. This tenant
+  // returned USER_NOT_FOUND when called with the UUID even though the GET
+  // by UUID succeeds (verified 2026-05-18) — keying by email works.
   const token = await getServiceToken();
-  const url = `${usersBase()}/${encodeURIComponent(existing.id)}/update`;
+  const url = `${usersBase()}/${encodeURIComponent(email)}/update`;
 
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 8000);
