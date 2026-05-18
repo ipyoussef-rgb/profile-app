@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { requireUserOrRedirect } from "@/lib/current-user";
+import { getProfile } from "@/lib/profile-service";
 import { audit } from "@/lib/audit";
+import { loadIdpProfile } from "@/lib/idp-prefill";
 import { prisma } from "@/lib/db";
+import { Overview } from "@/components/profile/Overview";
 import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { DEFAULT_LOCALE } from "@/lib/copy";
 
@@ -10,9 +13,11 @@ export const dynamic = "force-dynamic";
 export default async function ProfileOverviewPage() {
   const user = await requireUserOrRedirect("/profile");
 
-  const selections = await prisma.userAttributeValue.findMany({
-    where: { user_id: user.sub },
-  });
+  const [row, idp, selections] = await Promise.all([
+    getProfile(user.sub),
+    loadIdpProfile(user.email),
+    prisma.userAttributeValue.findMany({ where: { user_id: user.sub } }),
+  ]);
 
   const catalogIds = Array.from(new Set(selections.map((s) => s.catalog_id)));
   const valueIds = Array.from(new Set(selections.map((s) => s.value_id)));
@@ -36,6 +41,18 @@ export default async function ProfileOverviewPage() {
     actor_subject: user.sub,
     action: "profile_read",
   });
+
+  const profile = {
+    display_name: row?.display_name ?? null,
+    avatar_url: row?.avatar_url ?? null,
+    profile_visibility: row?.profile_visibility ?? "private",
+  };
+
+  if (!idp.configured) {
+    idp.data.username = user.preferred_username ?? null;
+    idp.data.email = user.email ?? null;
+    idp.data.email_verified = user.email_verified ?? null;
+  }
 
   const catalogById = new Map(catalogs.map((c) => [c.id, c]));
   const valueById = new Map(values.map((v) => [v.id, v]));
@@ -68,29 +85,29 @@ export default async function ProfileOverviewPage() {
   for (const g of grouped.values()) {
     g.values.sort((a, b) => a.sort_order - b.sort_order || a.label.localeCompare(b.label));
   }
-  const items = Array.from(grouped.values()).sort((a, b) =>
+  const attributeItems = Array.from(grouped.values()).sort((a, b) =>
     a.slug.localeCompare(b.slug),
   );
 
   return (
     <div className="space-y-4">
+      <Overview profile={profile} idp={idp} locale={DEFAULT_LOCALE} />
+
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle>Mein Profil</CardTitle>
+            <CardTitle>Interessen & Eigenschaften</CardTitle>
             <CardDescription>
-              Diese Auswahlen hast du unter „Attribute" gespeichert.
+              Deine unter „Attribute" gespeicherten Auswahlen.
             </CardDescription>
           </div>
           <Link href="/profile/attributes">
             <Button variant="secondary">Bearbeiten</Button>
           </Link>
         </div>
-      </Card>
 
-      {items.length === 0 ? (
-        <Card>
-          <p className="text-sm text-[var(--color-kobil-text-muted)]">
+        {attributeItems.length === 0 ? (
+          <p className="mt-3 text-sm text-[var(--color-kobil-text-muted)]">
             Du hast noch nichts ausgewählt.{" "}
             <Link
               href="/profile/attributes"
@@ -100,19 +117,21 @@ export default async function ProfileOverviewPage() {
             </Link>
             .
           </p>
-        </Card>
-      ) : (
-        items.map((c) => (
-          <Card key={c.slug}>
-            <CardTitle>{c.name}</CardTitle>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {c.values.map((v) => (
-                <Badge key={v.id}>{v.label}</Badge>
-              ))}
-            </div>
-          </Card>
-        ))
-      )}
+        ) : (
+          <dl className="mt-3 space-y-3">
+            {attributeItems.map((c) => (
+              <div key={c.slug}>
+                <dt className="text-sm text-[var(--color-kobil-text-muted)]">{c.name}</dt>
+                <dd className="mt-1 flex flex-wrap gap-2">
+                  {c.values.map((v) => (
+                    <Badge key={v.id}>{v.label}</Badge>
+                  ))}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </Card>
     </div>
   );
 }
