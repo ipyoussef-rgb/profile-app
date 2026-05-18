@@ -115,8 +115,7 @@ KOBIL_SERVICE_CLIENT_SECRET=
 KOBIL_IDP_USERS_API=                  # optional override (default: <issuer>/users)
 AUTH_SECRET=                          # openssl rand -base64 48
 APP_BASE_URL=http://localhost:3000    # or https://<your-vercel-domain>
-PROFILE_URL=                          # Neon pooled URL (host contains "-pooler")
-PROFILE_URL_UNPOOLED=                 # Neon direct URL (no "-pooler") — for migrations
+PROFILE_URL=                          # Neon URL (pooled is fine — advisory locks disabled in vercel-build)
 PRIVACY_NOTICE_VERSION=2026-05-14
 ```
 
@@ -142,10 +141,11 @@ warning and continues (the site boots; DB-backed routes 500 until you fix
 2. **Import** the project at <https://vercel.com/new> (or use the *Deploy with
    Vercel* button above).
 3. **Provision Neon Postgres**: in the Vercel project → *Storage* → *Create
-   Database* → *Neon*. Set the env-var prefix to `PROFILE` when adding the
-   integration so it auto-injects `PROFILE_URL` (pooled) and
-   `PROFILE_URL_UNPOOLED` (direct) — Prisma reads both directly, no manual
-   copy needed.
+   Database* → *Neon*. Set the env-var prefix to `PROFILE` so it auto-injects
+   `PROFILE_URL`. Prisma uses this single URL for both app queries and
+   migrations (advisory locks disabled via `PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1`
+   in `vercel-build`, which lets `prisma migrate deploy` run safely against
+   pgbouncer).
 4. **Set environment variables** in the Vercel project settings:
    - `KOBIL_IDP_ISSUER`
    - `KOBIL_MINIAPP_CLIENT_ID` + `KOBIL_MINIAPP_CLIENT_SECRET`

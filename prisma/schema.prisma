@@ -9,12 +9,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Runtime uses the pooled URL (good for serverless cold starts).
-  // Migrations use the direct/unpooled URL because pgbouncer in transaction
-  // mode can't take advisory locks. Both are auto-injected by Vercel's
-  // Neon integration with the configured prefix (here: PROFILE_).
-  url       = env("PROFILE_URL")
-  directUrl = env("PROFILE_URL_UNPOOLED")
+  // Single URL for both runtime and migrations. PROFILE_URL points at Neon
+  // (pooler is fine for app queries). Migrations work against pgbouncer
+  // because we disable Prisma's advisory locks via the env var
+  // PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 set in vercel-build.
+  url = env("PROFILE_URL")
 }
 
 // user_id == KOBIL Identity `sub` (UUID).
