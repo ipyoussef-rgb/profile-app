@@ -28,6 +28,7 @@ export function AttributePicker({
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelected));
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -40,6 +41,8 @@ export function AttributePicker({
       }
       return next;
     });
+    setDirty(true);
+    setMsg(null);
   }
 
   function save() {
@@ -47,58 +50,105 @@ export function AttributePicker({
       const r = await saveAttributeSelectionAction(catalogId, Array.from(selected));
       setMsg(
         r.ok
-          ? { ok: true, text: "Saved" }
-          : { ok: false, text: `Error: ${r.error ?? "unknown"}` },
+          ? { ok: true, text: locale === "de" ? "Gespeichert." : "Saved." }
+          : {
+              ok: false,
+              text:
+                (locale === "de" ? "Fehler: " : "Error: ") + (r.error ?? "unknown"),
+            },
       );
+      if (r.ok) setDirty(false);
     });
   }
 
+  const helper =
+    locale === "de"
+      ? "Optional. Wird zur Personalisierung Ihres Profils verwendet — Sie können die Auswahl jederzeit entfernen."
+      : "Optional. Used only to personalize your profile. You can remove this at any time.";
+  const counter =
+    locale === "de"
+      ? `${selected.size} ausgewählt`
+      : `${selected.size} selected`;
+  const modeBadge = multiSelect
+    ? locale === "de"
+      ? "Mehrfachauswahl"
+      : "Multi-select"
+    : locale === "de"
+      ? "Einfachauswahl"
+      : "Single-select";
+
   return (
     <Card>
-      <CardTitle>{title}</CardTitle>
-      {description ? <CardDescription>{description}</CardDescription> : null}
-      <p className="mb-3 text-xs text-[var(--color-kobil-text-muted)]">
-        Optional. Used only to personalize your profile. You can remove this at any time.
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <CardTitle>{title}</CardTitle>
+          {description ? <CardDescription>{description}</CardDescription> : null}
+        </div>
+        <span className="rounded-full border border-[var(--color-kobil-border)] px-2 py-0.5 text-[10px] uppercase tracking-wider text-[var(--color-kobil-text-muted)]">
+          {modeBadge}
+        </span>
+      </div>
+
+      <p className="mb-4 text-xs leading-relaxed text-[var(--color-kobil-text-muted)]">
+        {helper}
       </p>
-      <div className="flex flex-wrap gap-2">
-        {values.map((v) => {
-          const active = selected.has(v.id);
-          const label = locale === "de" ? v.label_de : v.label_en;
-          return (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => toggle(v.id)}
-              aria-pressed={active}
-              className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                active
-                  ? "border-[var(--color-kobil-primary)] bg-[var(--color-kobil-primary)] text-white"
-                  : "border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)] text-[var(--color-kobil-text)] hover:bg-[var(--color-kobil-surface-muted)]"
+
+      {values.length === 0 ? (
+        <p className="rounded-[var(--radius-kobil-sm)] border border-dashed border-[var(--color-kobil-border)] px-3 py-4 text-center text-sm text-[var(--color-kobil-text-muted)]">
+          {locale === "de" ? "Noch keine Werte für " : "No values configured yet for "}
+          <code className="rounded bg-[var(--color-kobil-surface-muted)] px-1 py-0.5 text-xs">
+            {catalogSlug}
+          </code>
+          .
+        </p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {values.map((v) => {
+            const active = selected.has(v.id);
+            const label = locale === "de" ? v.label_de : v.label_en;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => toggle(v.id)}
+                aria-pressed={active}
+                className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-150 active:scale-[0.97] ${
+                  active
+                    ? "border-[var(--color-kobil-primary)] bg-[var(--color-kobil-primary)] text-white shadow-[var(--shadow-kobil-sm)]"
+                    : "border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)] text-[var(--color-kobil-text)] hover:border-[var(--color-kobil-primary)] hover:bg-[var(--color-kobil-primary-tint)] hover:text-[var(--color-kobil-primary)]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-kobil-border)] pt-4">
+        <span className="text-xs text-[var(--color-kobil-text-muted)]">{counter}</span>
+        <div className="flex items-center gap-3">
+          {msg && (
+            <span
+              className={`text-sm ${
+                msg.ok
+                  ? "text-[var(--color-kobil-success)]"
+                  : "text-[var(--color-kobil-danger)]"
               }`}
             >
-              {label}
-            </button>
-          );
-        })}
-        {values.length === 0 && (
-          <span className="text-sm text-[var(--color-kobil-text-muted)]">
-            No values configured yet for <code>{catalogSlug}</code>.
-          </span>
-        )}
-      </div>
-      <div className="mt-4 flex items-center gap-3">
-        <Button type="button" onClick={save} disabled={pending}>
-          {pending ? "…" : "Save"}
-        </Button>
-        {msg && (
-          <span
-            className={`text-sm ${
-              msg.ok ? "text-[var(--color-kobil-success)]" : "text-[var(--color-kobil-danger)]"
-            }`}
-          >
-            {msg.text}
-          </span>
-        )}
+              {msg.text}
+            </span>
+          )}
+          <Button type="button" onClick={save} disabled={pending || !dirty}>
+            {pending
+              ? locale === "de"
+                ? "Speichere…"
+                : "Saving…"
+              : locale === "de"
+                ? "Speichern"
+                : "Save"}
+          </Button>
+        </div>
       </div>
     </Card>
   );

@@ -124,7 +124,7 @@ export default async function ProfileOverviewPage() {
                 <dt className="text-sm text-[var(--color-kobil-text-muted)]">{c.name}</dt>
                 <dd className="mt-1 flex flex-wrap gap-2">
                   {c.values.map((v) => (
-                    <Badge key={v.id}>{v.label}</Badge>
+                    <Badge key={v.id} tone="primary">{v.label}</Badge>
                   ))}
                 </dd>
               </div>

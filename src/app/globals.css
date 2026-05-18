@@ -4,6 +4,7 @@
   /* KOBIL brand tokens (placeholders — swap with real KOBIL assets). */
   --color-kobil-primary: #003a70;
   --color-kobil-primary-hover: #002e58;
+  --color-kobil-primary-tint: #e6efff;
   --color-kobil-secondary: #00a3e0;
   --color-kobil-surface: #ffffff;
   --color-kobil-surface-muted: #f4f6fa;
@@ -12,15 +13,32 @@
   --color-kobil-border: #d8dee9;
   --color-kobil-danger: #b91c1c;
   --color-kobil-success: #047857;
+  --color-kobil-ring: rgba(0, 58, 112, 0.28);
 
   --font-kobil: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --radius-kobil: 10px;
+  --radius-kobil: 12px;
+  --radius-kobil-sm: 8px;
+
+  --shadow-kobil-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
+  --shadow-kobil-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
 }
 
 html, body {
-  background: var(--color-kobil-surface-muted);
+  background:
+    radial-gradient(1200px 600px at 0% -10%, rgba(0, 163, 224, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(0, 58, 112, 0.06), transparent 60%),
+    var(--color-kobil-surface-muted);
+  background-attachment: fixed;
   color: var(--color-kobil-text);
   font-family: var(--font-kobil);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * { box-sizing: border-box; }
+
+*:focus-visible {
+  outline: 2px solid var(--color-kobil-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

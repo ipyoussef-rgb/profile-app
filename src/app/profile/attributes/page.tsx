@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUserOrRedirect } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
 import { AttributePicker } from "@/components/profile/AttributePicker";
+import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { DEFAULT_LOCALE, getCopy } from "@/lib/copy";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,10 @@ export default async function AttributesPage() {
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardTitle>{t.attributes.title}</CardTitle>
+        <CardDescription>{t.attributes.saveHint}</CardDescription>
+      </Card>
       {catalogs.map((c) => (
         <AttributePicker
           key={c.id}

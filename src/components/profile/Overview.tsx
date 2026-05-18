@@ -31,17 +31,17 @@ export function Overview({
       <Card>
         <div className="flex flex-col items-start gap-4 sm:flex-row">
           <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--color-kobil-primary)] text-2xl font-semibold text-white"
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-kobil-primary)] to-[var(--color-kobil-secondary)] text-2xl font-semibold text-white ring-4 ring-[var(--color-kobil-primary-tint)] sm:h-20 sm:w-20 sm:text-3xl"
             aria-hidden
           >
             {initial}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-xl font-semibold text-[var(--color-kobil-text)]">
+              <h1 className="break-words text-xl font-semibold tracking-tight text-[var(--color-kobil-text)] sm:text-2xl">
                 {display}
               </h1>
-              <Badge>
+              <Badge tone="primary">
                 {t.overview.visibilityLabel}: {profile.profile_visibility}
               </Badge>
             </div>
