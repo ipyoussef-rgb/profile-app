@@ -14,18 +14,25 @@ import {
 
 type Result = { ok: true; id?: string } | { ok: false; error: string };
 
-async function adminContext() {
+type AdminContext =
+  | { ok: true; admin: Awaited<ReturnType<typeof requireAdmin>> }
+  | { ok: false; error: `unauthorized:${"no_session" | "missing_role"}` };
+
+async function adminContext(): Promise<AdminContext> {
   try {
-    return await requireAdmin();
+    return { ok: true, admin: await requireAdmin() };
   } catch (e) {
-    if (e instanceof AdminUnauthorizedError) return null;
+    if (e instanceof AdminUnauthorizedError) {
+      return { ok: false, error: `unauthorized:${e.reason}` };
+    }
     throw e;
   }
 }
 
 export async function createCatalogAction(input: unknown): Promise<Result> {
-  const admin = await adminContext();
-  if (!admin) return { ok: false, error: "unauthorized" };
+  const ctx = await adminContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+  const admin = ctx.admin;
   let data;
   try {
     data = catalogCreateSchema.parse(input);
@@ -47,8 +54,9 @@ export async function createCatalogAction(input: unknown): Promise<Result> {
 }
 
 export async function updateCatalogAction(id: string, input: unknown): Promise<Result> {
-  const admin = await adminContext();
-  if (!admin) return { ok: false, error: "unauthorized" };
+  const ctx = await adminContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+  const admin = ctx.admin;
   let patch;
   try {
     patch = catalogUpdateSchema.parse(input);
@@ -69,8 +77,9 @@ export async function updateCatalogAction(id: string, input: unknown): Promise<R
 }
 
 export async function createCatalogValueAction(catalogId: string, input: unknown): Promise<Result> {
-  const admin = await adminContext();
-  if (!admin) return { ok: false, error: "unauthorized" };
+  const ctx = await adminContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+  const admin = ctx.admin;
   let data;
   try {
     data = catalogValueCreateSchema.parse(input);
@@ -102,8 +111,9 @@ export async function updateCatalogValueAction(
   valueId: string,
   input: unknown,
 ): Promise<Result> {
-  const admin = await adminContext();
-  if (!admin) return { ok: false, error: "unauthorized" };
+  const ctx = await adminContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+  const admin = ctx.admin;
   let patch;
   try {
     patch = catalogValueUpdateSchema.parse(input);
