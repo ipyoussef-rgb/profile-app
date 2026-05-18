@@ -12,9 +12,9 @@ datasource db {
   // Runtime uses the pooled URL (good for serverless cold starts).
   // Migrations use the direct/unpooled URL because pgbouncer in transaction
   // mode can't take advisory locks. Both are auto-injected by Vercel's
-  // Neon integration — no manual copy needed.
-  url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL_UNPOOLED")
+  // Neon integration with the configured prefix (here: PROFILE_).
+  url       = env("PROFILE_URL")
+  directUrl = env("PROFILE_URL_UNPOOLED")
 }
 
 // user_id == KOBIL Identity `sub` (UUID).

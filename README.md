@@ -115,8 +115,8 @@ KOBIL_SERVICE_CLIENT_SECRET=
 KOBIL_IDP_USERS_API=                  # optional override (default: <issuer>/users)
 AUTH_SECRET=                          # openssl rand -base64 48
 APP_BASE_URL=http://localhost:3000    # or https://<your-vercel-domain>
-DATABASE_URL=                         # Neon pooled URL (host contains "-pooler")
-DATABASE_URL_UNPOOLED=                # Neon direct URL (no "-pooler") — for migrations
+PROFILE_URL=                          # Neon pooled URL (host contains "-pooler")
+PROFILE_URL_UNPOOLED=                 # Neon direct URL (no "-pooler") — for migrations
 PRIVACY_NOTICE_VERSION=2026-05-14
 ```
 
@@ -134,16 +134,17 @@ Open <http://localhost:3000>.
 
 The repo includes a `vercel.json` that runs `prisma migrate deploy` as part of
 the Vercel build, so the database schema is created/updated automatically on
-every deploy. If `DATABASE_URL` is missing or unreachable, the build prints a
+every deploy. If `PROFILE_URL` is missing or unreachable, the build prints a
 warning and continues (the site boots; DB-backed routes 500 until you fix
-`DATABASE_URL`).
+`PROFILE_URL`).
 
 1. **Push** this repo to GitHub.
 2. **Import** the project at <https://vercel.com/new> (or use the *Deploy with
    Vercel* button above).
 3. **Provision Neon Postgres**: in the Vercel project → *Storage* → *Create
-   Database* → *Neon*. The integration auto-injects `DATABASE_URL` (pooled)
-   and `DATABASE_URL_UNPOOLED` (direct) — Prisma uses both directly, no manual
+   Database* → *Neon*. Set the env-var prefix to `PROFILE` when adding the
+   integration so it auto-injects `PROFILE_URL` (pooled) and
+   `PROFILE_URL_UNPOOLED` (direct) — Prisma reads both directly, no manual
    copy needed.
 4. **Set environment variables** in the Vercel project settings:
    - `KOBIL_IDP_ISSUER`
