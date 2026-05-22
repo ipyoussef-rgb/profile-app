@@ -147,3 +147,19 @@ model AdminAuditLog {
   @@index([target_user_id, created_at])
   @@map("admin_audit_logs")
 }
+
+model EidVerification {
+  user_id        String   @id @db.Uuid
+  verified_at    DateTime @default(now())
+  transaction_id String?
+  given_names    String?
+  family_names   String?
+  date_of_birth  String?
+  place_of_birth String?
+  street         String?
+  city           String?
+  zip_code       String?
+  country        String?
+
+  @@map("eid_verifications")
+}

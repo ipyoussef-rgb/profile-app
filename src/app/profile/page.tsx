@@ -5,19 +5,46 @@ import { audit } from "@/lib/audit";
 import { loadIdpProfile } from "@/lib/idp-prefill";
 import { prisma } from "@/lib/db";
 import { Overview } from "@/components/profile/Overview";
+import { EidVerificationCard, type EidVerifiedView } from "@/components/profile/EidVerificationCard";
 import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { DEFAULT_LOCALE } from "@/lib/copy";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProfileOverviewPage() {
+export default async function ProfileOverviewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ eid?: string }>;
+}) {
   const user = await requireUserOrRedirect("/profile");
+  const sp = (await searchParams) ?? {};
+  const eidStatusRaw = sp.eid;
+  const eidStatus: "pending" | "failed" | "expired" | "ok" | null =
+    eidStatusRaw === "pending" || eidStatusRaw === "failed" || eidStatusRaw === "expired" || eidStatusRaw === "ok"
+      ? eidStatusRaw
+      : null;
 
-  const [row, idp, selections] = await Promise.all([
+  const [row, idp, selections, eid] = await Promise.all([
     getProfile(user.sub),
     loadIdpProfile(user.email),
     prisma.userAttributeValue.findMany({ where: { user_id: user.sub } }),
+    prisma.eidVerification.findUnique({ where: { user_id: user.sub } }),
   ]);
+
+  const eidView: EidVerifiedView | null = eid
+    ? {
+        verified_at: eid.verified_at.toISOString(),
+        given_names: eid.given_names,
+        family_names: eid.family_names,
+        date_of_birth: eid.date_of_birth,
+        place_of_birth: eid.place_of_birth,
+        street: eid.street,
+        city: eid.city,
+        zip_code: eid.zip_code,
+        country: eid.country,
+      }
+    : null;
 
   const catalogIds = Array.from(new Set(selections.map((s) => s.catalog_id)));
   const valueIds = Array.from(new Set(selections.map((s) => s.value_id)));
@@ -91,6 +118,13 @@ export default async function ProfileOverviewPage() {
 
   return (
     <div className="space-y-4">
+      <EidVerificationCard
+        initial={eidView}
+        devMockEnabled={env().EID_DEV_MOCK}
+        statusFromQuery={eidStatus}
+        locale={DEFAULT_LOCALE}
+      />
+
       <Overview profile={profile} idp={idp} locale={DEFAULT_LOCALE} />
 
       <Card>

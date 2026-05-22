@@ -20,6 +20,17 @@ const schema = z.object({
     .union([z.literal("1"), z.literal("")])
     .optional()
     .transform((v) => v === "1"),
+  // eID (AusweisApp / Governikus). Optional — without these, only the UI
+  // scaffold + dev-mock works; real attribute extraction needs a registered
+  // SP at an eID-Server (e.g. Governikus Test-PP).
+  EID_PAOS_URL: z.string().url().optional(),
+  EID_REQUESTED_ATTRIBUTES: z
+    .string()
+    .default("GivenNames,FamilyNames,DateOfBirth,PlaceOfBirth,PlaceOfResidence"),
+  EID_DEV_MOCK: z
+    .union([z.literal("1"), z.literal("")])
+    .optional()
+    .transform((v) => v === "1"),
 });
 
 let cached: z.infer<typeof schema> | null = null;
