@@ -8,7 +8,9 @@ import { Overview } from "@/components/profile/Overview";
 import { EidVerificationCard, type EidVerifiedView } from "@/components/profile/EidVerificationCard";
 import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { DEFAULT_LOCALE } from "@/lib/copy";
+import { eidClientUrl, signEidSession } from "@/lib/eid";
 import { env } from "@/lib/env";
+import { randomUUID } from "node:crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +33,16 @@ export default async function ProfileOverviewPage({
     prisma.userAttributeValue.findMany({ where: { user_id: user.sub } }),
     prisma.eidVerification.findUnique({ where: { user_id: user.sub } }),
   ]);
+
+  // Sign a fresh eID session JWT on every render so the rendered link is
+  // always within the 10-min TTL. The browser navigates directly (anchor
+  // click → user gesture) which is what bypasses HTTPS→HTTP-localhost
+  // mixed-content blocks. We only need this when the user isn't already
+  // verified, but cheap to always sign.
+  const eidJwt = await signEidSession({ sub: user.sub, nonce: randomUUID() });
+  const eidStartUrl = eidClientUrl(
+    `${env().APP_BASE_URL.replace(/\/$/, "")}/api/eid/tctoken?sid=${encodeURIComponent(eidJwt)}`,
+  );
 
   const eidView: EidVerifiedView | null = eid
     ? {
@@ -121,6 +133,7 @@ export default async function ProfileOverviewPage({
       <EidVerificationCard
         initial={eidView}
         devMockEnabled={env().EID_DEV_MOCK}
+        eidStartUrl={eidStartUrl}
         statusFromQuery={eidStatus}
         locale={DEFAULT_LOCALE}
       />

@@ -18,11 +18,13 @@ export type EidVerifiedView = {
 export function EidVerificationCard({
   initial,
   devMockEnabled,
+  eidStartUrl,
   statusFromQuery,
   locale = "de",
 }: {
   initial: EidVerifiedView | null;
   devMockEnabled: boolean;
+  eidStartUrl: string;
   statusFromQuery: "pending" | "failed" | "expired" | "ok" | null;
   locale?: "de" | "en";
 }) {
@@ -56,27 +58,10 @@ export function EidVerificationCard({
     };
   }, [statusFromQuery, data]);
 
-  function start() {
-    startTransition(async () => {
-      setMsg(null);
-      const r = await fetch("/api/eid/start", { method: "POST" });
-      const j = (await r.json()) as { ok: boolean; clientUrl?: string; error?: string };
-      if (!j.ok || !j.clientUrl) {
-        setMsg({
-          ok: false,
-          text:
-            locale === "de"
-              ? `Konnte eID-Sitzung nicht starten (${j.error ?? "unknown"}).`
-              : `Could not start eID session (${j.error ?? "unknown"}).`,
-        });
-        return;
-      }
-      // Open AusweisApp on the user's machine. Browser navigates to the
-      // localhost AusweisApp entrypoint; if AusweisApp isn't installed, the
-      // browser will show its own "couldn't open" UI.
-      window.location.href = j.clientUrl;
-    });
-  }
+  // The "Verify" button is now a real <a href={eidStartUrl}> below — that's
+  // a user-gesture navigation, which is the only reliable way to reach
+  // http://127.0.0.1:24727 from an HTTPS page (browsers silently block
+  // programmatic window.location.href = "http://..." from HTTPS contexts).
 
   function devComplete() {
     startTransition(async () => {
@@ -201,15 +186,12 @@ export function EidVerificationCard({
       )}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" onClick={start} disabled={pending}>
-          {pending
-            ? locale === "de"
-              ? "Starte …"
-              : "Starting …"
-            : locale === "de"
-              ? "Mit eID verifizieren"
-              : "Verify with eID"}
-        </Button>
+        <a
+          href={eidStartUrl}
+          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-kobil-sm)] bg-[var(--color-kobil-primary)] px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-kobil-sm)] transition-all duration-150 hover:bg-[var(--color-kobil-primary-hover)] hover:shadow-[var(--shadow-kobil-md)] active:scale-[0.98]"
+        >
+          {locale === "de" ? "Mit eID verifizieren" : "Verify with eID"}
+        </a>
         {devMockEnabled && (
           <Button type="button" variant="secondary" onClick={devComplete} disabled={pending}>
             {locale === "de" ? "Dev-Mock abschließen" : "Complete dev mock"}
@@ -227,6 +209,19 @@ export function EidVerificationCard({
           </span>
         )}
       </div>
+      <details className="mt-3 text-xs text-[var(--color-kobil-text-muted)]">
+        <summary className="cursor-pointer select-none">
+          {locale === "de" ? "Funktioniert nicht?" : "Not working?"}
+        </summary>
+        <p className="mt-2 leading-relaxed">
+          {locale === "de"
+            ? "Falls AusweisApp sich nicht öffnet: prüfen Sie, ob die Anwendung läuft (im System-Tray/Menü) und dass keine andere Anwendung Port 24727 blockiert. Sie können diese URL auch manuell in einem neuen Tab öffnen:"
+            : "If AusweisApp doesn't open: check that it's running (system tray/menu) and that nothing else is using port 24727. You can also open this URL manually in a new tab:"}
+        </p>
+        <code className="mt-2 block break-all rounded bg-[var(--color-kobil-surface-muted)] px-2 py-1 text-[10px]">
+          {eidStartUrl}
+        </code>
+      </details>
     </Card>
   );
 }
