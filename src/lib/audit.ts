@@ -7,7 +7,8 @@ export type AuditAction =
   | "profile_export"
   | "profile_deletion_requested"
   | "consent_updated"
-  | "auth_denied";
+  | "auth_denied"
+  | "eid_verified";
 
 export type AuditInput = {
   user_id: string;
