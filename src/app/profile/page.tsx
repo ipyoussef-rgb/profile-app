@@ -40,9 +40,16 @@ export default async function ProfileOverviewPage({
   // mixed-content blocks. We only need this when the user isn't already
   // verified, but cheap to always sign.
   const eidJwt = await signEidSession({ sub: user.sub, nonce: randomUUID() });
-  const eidStartUrl = eidClientUrl(
-    `${env().APP_BASE_URL.replace(/\/$/, "")}/api/eid/tctoken?sid=${encodeURIComponent(eidJwt)}`,
-  );
+  // If we have our own eID-Server configured, use our TcToken endpoint.
+  // Otherwise fall back to the Governikus public demo TcToken so the user
+  // can at least confirm the AusweisApp SDK trigger works end-to-end. The
+  // demo lands on Governikus's result page, not ours — set EID_PAOS_URL
+  // (+ SP registration) to redirect back into this app with real data.
+  const tcTokenForSdk = env().EID_PAOS_URL
+    ? `${env().APP_BASE_URL.replace(/\/$/, "")}/api/eid/tctoken?sid=${encodeURIComponent(eidJwt)}`
+    : "https://test.governikus-eid.de/Autent-DemoApplication/RequestSender";
+  const eidStartUrl = eidClientUrl(tcTokenForSdk);
+  const eidUsingDemo = !env().EID_PAOS_URL;
 
   const eidView: EidVerifiedView | null = eid
     ? {
@@ -134,6 +141,7 @@ export default async function ProfileOverviewPage({
         initial={eidView}
         devMockEnabled={env().EID_DEV_MOCK}
         eidStartUrl={eidStartUrl}
+        eidUsingDemo={eidUsingDemo}
         statusFromQuery={eidStatus}
         locale={DEFAULT_LOCALE}
       />

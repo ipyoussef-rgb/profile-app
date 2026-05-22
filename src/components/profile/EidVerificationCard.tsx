@@ -19,18 +19,50 @@ export function EidVerificationCard({
   initial,
   devMockEnabled,
   eidStartUrl,
+  eidUsingDemo = false,
   statusFromQuery,
   locale = "de",
 }: {
   initial: EidVerifiedView | null;
   devMockEnabled: boolean;
   eidStartUrl: string;
+  eidUsingDemo?: boolean;
   statusFromQuery: "pending" | "failed" | "expired" | "ok" | null;
   locale?: "de" | "en";
 }) {
   const [data, setData] = useState<EidVerifiedView | null>(initial);
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [sdkProbe, setSdkProbe] = useState<string | null>(null);
+
+  async function probeSdk() {
+    setSdkProbe(locale === "de" ? "Prüfe …" : "Probing …");
+    try {
+      // In the KOBIL Super-App mini-app context this request is intercepted
+      // and forwarded to the embedded AusweisApp SDK; the response tells us
+      // whether the SDK bridge is reachable at all.
+      const res = await fetch("http://127.0.0.1:24727/eID-Client?Status=json", {
+        method: "GET",
+        mode: "cors",
+        cache: "no-store",
+      });
+      let bodyPreview = "";
+      try {
+        bodyPreview = (await res.text()).slice(0, 200);
+      } catch {
+        /* ignore */
+      }
+      setSdkProbe(`HTTP ${res.status} ${res.type} — ${bodyPreview || "(no body)"}`);
+    } catch (e) {
+      setSdkProbe(
+        `fetch failed: ${(e as Error).message ?? "unknown"}. ${
+          locale === "de"
+            ? "Wahrscheinlich kann der Browser/WebView 127.0.0.1:24727 nicht erreichen."
+            : "Likely the browser/WebView cannot reach 127.0.0.1:24727."
+        }`,
+      );
+    }
+  }
 
   // After AusweisApp redirects back, poll briefly in case /api/eid/result
   // arrived a moment after our refresh hit. Cheap polling for ~10 seconds.
@@ -185,6 +217,14 @@ export function EidVerificationCard({
         </p>
       )}
 
+      {eidUsingDemo && (
+        <p className="mb-3 rounded-[var(--radius-kobil-sm)] bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {locale === "de"
+            ? "Demo-Modus: ohne EID_PAOS_URL läuft die Verifizierung gegen das öffentliche Governikus-Test-PP. Nach erfolgreicher Auth landest du auf einer Governikus-Ergebnisseite, nicht hier zurück. Setze EID_PAOS_URL für den vollen Flow."
+            : "Demo mode: without EID_PAOS_URL the verification runs against Governikus' public Test-PP. After a successful auth you'll land on a Governikus result page, not back here. Set EID_PAOS_URL for the full flow."}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
         <a
           href={eidStartUrl}
@@ -192,6 +232,9 @@ export function EidVerificationCard({
         >
           {locale === "de" ? "Mit eID verifizieren" : "Verify with eID"}
         </a>
+        <Button type="button" variant="secondary" onClick={probeSdk}>
+          {locale === "de" ? "SDK-Status prüfen" : "Probe SDK status"}
+        </Button>
         {devMockEnabled && (
           <Button type="button" variant="secondary" onClick={devComplete} disabled={pending}>
             {locale === "de" ? "Dev-Mock abschließen" : "Complete dev mock"}
@@ -209,6 +252,11 @@ export function EidVerificationCard({
           </span>
         )}
       </div>
+      {sdkProbe && (
+        <pre className="mt-3 max-h-32 overflow-auto rounded-[var(--radius-kobil-sm)] bg-[var(--color-kobil-surface-muted)] px-2 py-1.5 text-[11px] text-[var(--color-kobil-text)]">
+          {sdkProbe}
+        </pre>
+      )}
       <details className="mt-3 text-xs text-[var(--color-kobil-text-muted)]">
         <summary className="cursor-pointer select-none">
           {locale === "de" ? "Funktioniert nicht?" : "Not working?"}
