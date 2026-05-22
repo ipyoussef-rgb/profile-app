@@ -51,11 +51,19 @@ export async function verifyEidSession(token: string): Promise<EidSession | null
   }
 }
 
-/** Build the AusweisApp eID-Client URL the browser should navigate to. */
+/** Build the AusweisApp eID-Client URL the browser should navigate to.
+ *  We use the `eid://` custom URI scheme — registered by AusweisApp /
+ *  AusweisApp SDK and intercepted by the KOBIL Super-App container — so
+ *  the call reaches the SDK from inside a mini-app WebView, where the
+ *  HTTP-localhost variant doesn't. The HTTP form is still exposed as a
+ *  fallback link for desktop testing. */
 export function eidClientUrl(tcTokenUrl: string): string {
-  // The AusweisApp listens on 127.0.0.1:24727 on the user's machine.
-  // Per https://www.ausweisapp.bund.de/sdk/commands.html the eID-Client
-  // entry-point takes a tcTokenURL query parameter (URL-encoded).
+  return `eid://127.0.0.1:24727/eID-Client?tcTokenURL=${encodeURIComponent(tcTokenUrl)}`;
+}
+
+/** HTTP-localhost variant — works on desktop where AusweisApp listens on
+ *  127.0.0.1:24727 directly. Surfaced as a "try the other one" link. */
+export function eidClientUrlHttp(tcTokenUrl: string): string {
   return `http://127.0.0.1:24727/eID-Client?tcTokenURL=${encodeURIComponent(tcTokenUrl)}`;
 }
 

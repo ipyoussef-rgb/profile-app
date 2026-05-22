@@ -19,6 +19,7 @@ export function EidVerificationCard({
   initial,
   devMockEnabled,
   eidStartUrl,
+  eidStartUrlHttp,
   eidUsingDemo = false,
   statusFromQuery,
   locale = "de",
@@ -26,6 +27,7 @@ export function EidVerificationCard({
   initial: EidVerifiedView | null;
   devMockEnabled: boolean;
   eidStartUrl: string;
+  eidStartUrlHttp?: string;
   eidUsingDemo?: boolean;
   statusFromQuery: "pending" | "failed" | "expired" | "ok" | null;
   locale?: "de" | "en";
@@ -263,12 +265,30 @@ export function EidVerificationCard({
         </summary>
         <p className="mt-2 leading-relaxed">
           {locale === "de"
-            ? "Falls AusweisApp sich nicht öffnet: prüfen Sie, ob die Anwendung läuft (im System-Tray/Menü) und dass keine andere Anwendung Port 24727 blockiert. Sie können diese URL auch manuell in einem neuen Tab öffnen:"
-            : "If AusweisApp doesn't open: check that it's running (system tray/menu) and that nothing else is using port 24727. You can also open this URL manually in a new tab:"}
+            ? "Hauptlink benutzt das eid:// Custom-Scheme (für Mini-Apps / Mobile). Wenn der Klick nichts tut, versuche stattdessen die HTTP-Variante (für Desktop-AusweisApp):"
+            : "The primary link uses the eid:// custom scheme (for mini-apps / mobile). If clicking does nothing, try the HTTP variant instead (for desktop AusweisApp):"}
         </p>
-        <code className="mt-2 block break-all rounded bg-[var(--color-kobil-surface-muted)] px-2 py-1 text-[10px]">
-          {eidStartUrl}
+        {eidStartUrlHttp && (
+          <a
+            href={eidStartUrlHttp}
+            className="mt-2 inline-flex items-center justify-center gap-2 rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] px-3 py-1.5 text-xs text-[var(--color-kobil-text)] hover:bg-[var(--color-kobil-surface-muted)]"
+          >
+            {locale === "de"
+              ? "Über http://127.0.0.1:24727 versuchen"
+              : "Try via http://127.0.0.1:24727"}
+          </a>
+        )}
+        <p className="mt-3 leading-relaxed">
+          {locale === "de" ? "URLs zur manuellen Diagnose:" : "URLs for manual diagnostics:"}
+        </p>
+        <code className="mt-1 block break-all rounded bg-[var(--color-kobil-surface-muted)] px-2 py-1 text-[10px]">
+          eid://: {eidStartUrl}
         </code>
+        {eidStartUrlHttp && (
+          <code className="mt-1 block break-all rounded bg-[var(--color-kobil-surface-muted)] px-2 py-1 text-[10px]">
+            http://: {eidStartUrlHttp}
+          </code>
+        )}
       </details>
     </Card>
   );

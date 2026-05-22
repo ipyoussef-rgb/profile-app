@@ -8,7 +8,7 @@ import { Overview } from "@/components/profile/Overview";
 import { EidVerificationCard, type EidVerifiedView } from "@/components/profile/EidVerificationCard";
 import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { DEFAULT_LOCALE } from "@/lib/copy";
-import { eidClientUrl, signEidSession } from "@/lib/eid";
+import { eidClientUrl, eidClientUrlHttp, signEidSession } from "@/lib/eid";
 import { env } from "@/lib/env";
 import { randomUUID } from "node:crypto";
 
@@ -49,6 +49,7 @@ export default async function ProfileOverviewPage({
     ? `${env().APP_BASE_URL.replace(/\/$/, "")}/api/eid/tctoken?sid=${encodeURIComponent(eidJwt)}`
     : "https://test.governikus-eid.de/Autent-DemoApplication/RequestSender";
   const eidStartUrl = eidClientUrl(tcTokenForSdk);
+  const eidStartUrlHttp = eidClientUrlHttp(tcTokenForSdk);
   const eidUsingDemo = !env().EID_PAOS_URL;
 
   const eidView: EidVerifiedView | null = eid
@@ -141,6 +142,7 @@ export default async function ProfileOverviewPage({
         initial={eidView}
         devMockEnabled={env().EID_DEV_MOCK}
         eidStartUrl={eidStartUrl}
+        eidStartUrlHttp={eidStartUrlHttp}
         eidUsingDemo={eidUsingDemo}
         statusFromQuery={eidStatus}
         locale={DEFAULT_LOCALE}
