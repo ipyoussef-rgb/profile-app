@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { audit } from "@/lib/audit";
-import { requireUser } from "@/lib/current-user";
+import { requireUser, UnauthorizedError } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
 
 type Result = { ok: boolean; error?: string };
@@ -14,7 +14,10 @@ export async function saveAttributeSelectionAction(
   let user;
   try {
     user = await requireUser();
-  } catch {
+  } catch (e) {
+    if (e instanceof UnauthorizedError) {
+      return { ok: false, error: `unauthorized:${e.reason}` };
+    }
     return { ok: false, error: "unauthorized" };
   }
 
