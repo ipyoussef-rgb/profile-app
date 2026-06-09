@@ -69,6 +69,18 @@ export function EditForm({
                 className={inputClass}
               />
             </Field>
+            <Field label={t.fields.phone} helper="+49 170 1234567 (E.164)">
+              <input
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="+49…"
+                defaultValue={idp.data.phone ?? ""}
+                disabled={!idp.configured}
+                className={inputClass}
+              />
+            </Field>
             <Field label={t.fields.locale} helper="z. B. de, de-DE, en-US">
               <input
                 name="locale"
@@ -164,12 +176,9 @@ export function EditForm({
         <CardTitle>{t.edit.securityTitle}</CardTitle>
         <CardDescription>{t.edit.idpHelper}</CardDescription>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <a href="/api/auth/login?kc_action=UPDATE_EMAIL&returnTo=%2Fprofile" className={actionLink}>
             {t.edit.changeEmail}
-          </a>
-          <a href="/api/auth/login?kc_action=UPDATE_PHONE_NUMBER&returnTo=%2Fprofile" className={actionLink}>
-            {t.edit.changePhone}
           </a>
           <a href="/api/auth/login?kc_action=UPDATE_PASSWORD&returnTo=%2Fprofile" className={actionLink}>
             {t.edit.changePassword}

@@ -73,7 +73,7 @@ export const de = {
     changePhone: "Telefonnummer ändern",
     changePassword: "Passwort ändern",
     idpHelper:
-      "E-Mail-, Telefon- und Passwortänderungen werden von KOBIL Identity durchgeführt. Nach Abschluss werden Sie zurück zu Ihrem Profil geleitet.",
+      "E-Mail- und Passwortänderungen werden von KOBIL Identity durchgeführt. Nach Abschluss werden Sie zurück zu Ihrem Profil geleitet.",
   },
   privacy: {
     title: "Datenschutz & Einwilligungen",

@@ -72,7 +72,7 @@ export const en = {
     changePhone: "Change phone number",
     changePassword: "Change password",
     idpHelper:
-      "Email, phone, and password changes are handled by KOBIL Identity. After you finish, you will be redirected back to your profile.",
+      "Email and password changes are handled by KOBIL Identity. After you finish, you will be redirected back to your profile.",
   },
   privacy: {
     title: "Privacy & consents",
