@@ -42,14 +42,14 @@ export function ConsentToggle({
   return (
     <div className="flex items-start justify-between gap-4 border-t border-[var(--color-kobil-border)] py-4 first:border-t-0 first:pt-0">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-[var(--color-kobil-text)]">{title}</div>
-        <p className="mt-1 text-sm text-[var(--color-kobil-text-muted)]">{description}</p>
+        <div className="text-base font-medium text-[var(--color-kobil-text)]">{title}</div>
+        <p className="mt-1 text-[15px] leading-relaxed text-[var(--color-kobil-text-muted)]">{description}</p>
         {lastUpdatedAt ? (
-          <p className="mt-1 text-xs text-[var(--color-kobil-text-muted)]">
+          <p className="mt-1 text-[13px] text-[var(--color-kobil-text-muted)]">
             {lastUpdatedLabel}: {new Date(lastUpdatedAt).toLocaleString()}
           </p>
         ) : null}
-        {error ? <p className="mt-1 text-xs text-[var(--color-kobil-danger)]">{error}</p> : null}
+        {error ? <p className="mt-1 text-[13px] text-[var(--color-kobil-danger)]">{error}</p> : null}
       </div>
       <button
         type="button"
@@ -58,15 +58,20 @@ export function ConsentToggle({
         aria-label={granted ? revokeLabel : grantLabel}
         disabled={pending}
         onClick={() => flip(!granted)}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-60 ${
-          granted ? "bg-[var(--color-kobil-primary)]" : "bg-[var(--color-kobil-border)]"
-        }`}
+        className="grid min-h-[var(--tap-kobil)] min-w-[var(--tap-kobil)] shrink-0 cursor-pointer place-items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-kobil-ring)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {/* Visual track — the tap area above is a comfortable 48px square. */}
         <span
-          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-            granted ? "translate-x-5" : "translate-x-0.5"
+          className={`relative block h-7 w-12 rounded-full transition ${
+            granted ? "bg-[var(--color-kobil-primary)]" : "bg-[var(--color-kobil-border)]"
           }`}
-        />
+        >
+          <span
+            className={`absolute top-0.5 h-6 w-6 transform rounded-full bg-white shadow transition-all ${
+              granted ? "left-[1.375rem]" : "left-0.5"
+            }`}
+          />
+        </span>
       </button>
     </div>
   );

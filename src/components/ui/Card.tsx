@@ -1,5 +1,13 @@
 import { HTMLAttributes, ReactNode } from "react";
 
+/**
+ * Canonical form-control class. 16px text (no iOS zoom) + a 48px min height
+ * so fields are easy to tap and type into inside the mobile mini-app. Import
+ * this everywhere instead of redefining per-form.
+ */
+export const inputClass =
+  "w-full min-h-[var(--tap-kobil)] rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)] px-4 py-3 text-base text-[var(--color-kobil-text)] placeholder:text-[var(--color-kobil-text-muted)] transition-colors focus:border-[var(--color-kobil-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-kobil-primary)]/25 disabled:cursor-not-allowed disabled:bg-[var(--color-kobil-surface-muted)] disabled:opacity-70";
+
 export function Card({
   children,
   className = "",
@@ -17,7 +25,7 @@ export function Card({
 
 export function CardTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="mb-1 text-lg font-semibold tracking-tight text-[var(--color-kobil-text)] sm:text-xl">
+    <h2 className="mb-1 text-xl font-semibold tracking-tight text-[var(--color-kobil-text)] sm:text-2xl">
       {children}
     </h2>
   );
@@ -25,7 +33,7 @@ export function CardTitle({ children }: { children: ReactNode }) {
 
 export function CardDescription({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-4 text-sm leading-relaxed text-[var(--color-kobil-text-muted)]">
+    <p className="mb-4 text-[15px] leading-relaxed text-[var(--color-kobil-text-muted)]">
       {children}
     </p>
   );
@@ -42,10 +50,10 @@ export function Field({
 }) {
   return (
     <label className="mb-4 block">
-      <div className="mb-1 text-sm font-medium text-[var(--color-kobil-text)]">{label}</div>
+      <div className="mb-1.5 text-[15px] font-medium text-[var(--color-kobil-text)]">{label}</div>
       {children}
       {helper ? (
-        <div className="mt-1 text-xs text-[var(--color-kobil-text-muted)]">{helper}</div>
+        <div className="mt-1.5 text-[13px] text-[var(--color-kobil-text-muted)]">{helper}</div>
       ) : null}
     </label>
   );
@@ -59,8 +67,9 @@ export function Button({
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "danger";
 }) {
+  // min-h 48px + generous padding = comfortable thumb target on mobile.
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-[var(--radius-kobil-sm)] px-4 py-2 text-sm font-medium transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex min-h-[var(--tap-kobil)] items-center justify-center gap-2 rounded-[var(--radius-kobil-sm)] px-5 py-3 text-base font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-kobil-ring)] focus-visible:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100";
   const styles = {
     primary:
       "bg-[var(--color-kobil-primary)] text-white shadow-[var(--shadow-kobil-sm)] hover:bg-[var(--color-kobil-primary-hover)] hover:shadow-[var(--shadow-kobil-md)]",
@@ -91,7 +100,7 @@ export function Badge({
   }[tone];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${styles}`}
+      className={`inline-flex items-center rounded-full px-3 py-1 text-[13px] font-medium ${styles}`}
     >
       {children}
     </span>

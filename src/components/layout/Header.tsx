@@ -20,7 +20,6 @@ export function Header({
   const items = [
     { href: "/profile", label: t.nav.overview },
     { href: "/profile/attributes", label: t.nav.attributes },
-    { href: "/profile/privacy", label: t.nav.privacy },
     { href: "/profile/data-and-account", label: t.nav.data },
   ];
 
@@ -39,16 +38,16 @@ export function Header({
         >
           <KobilLogo />
           <span className="flex flex-col leading-tight">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--color-kobil-text-muted)]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-kobil-text-muted)]">
               {t.brand}
             </span>
-            <span className="text-sm font-semibold text-[var(--color-kobil-text)]">
+            <span className="text-base font-semibold text-[var(--color-kobil-text)]">
               {t.appName}
             </span>
           </span>
         </Link>
 
-        <nav className="hidden gap-1 text-sm md:flex">
+        <nav className="hidden gap-1 text-[15px] md:flex">
           {items.map((i) => {
             const active = isActive(i.href);
             return (
@@ -56,7 +55,7 @@ export function Header({
                 key={i.href}
                 href={i.href}
                 aria-current={active ? "page" : undefined}
-                className={`rounded-[var(--radius-kobil-sm)] px-3 py-1.5 transition-colors ${
+                className={`rounded-[var(--radius-kobil-sm)] px-4 py-2 font-medium transition-colors ${
                   active
                     ? "bg-[var(--color-kobil-primary-tint)] text-[var(--color-kobil-primary)]"
                     : "text-[var(--color-kobil-text-muted)] hover:bg-[var(--color-kobil-surface-muted)] hover:text-[var(--color-kobil-primary)]"
@@ -80,7 +79,7 @@ export function Header({
           <Link
             href="/api/auth/logout"
             prefetch={false}
-            className="hidden rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] px-3 py-1.5 text-[var(--color-kobil-text-muted)] transition-colors hover:border-[var(--color-kobil-primary)] hover:text-[var(--color-kobil-primary)] md:inline-block"
+            className="hidden rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] px-4 py-2 text-[15px] font-medium text-[var(--color-kobil-text-muted)] transition-colors hover:border-[var(--color-kobil-primary)] hover:text-[var(--color-kobil-primary)] md:inline-block"
           >
             {t.nav.logout}
           </Link>
@@ -89,7 +88,7 @@ export function Header({
             aria-label="Toggle menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] text-[var(--color-kobil-text)] transition-colors hover:bg-[var(--color-kobil-surface-muted)] md:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] text-[var(--color-kobil-text)] transition-colors hover:bg-[var(--color-kobil-surface-muted)] md:hidden"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               {open ? (
@@ -111,7 +110,7 @@ export function Header({
 
       {open && (
         <nav className="border-t border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)] md:hidden">
-          <ul className="mx-auto flex max-w-3xl flex-col px-2 py-2 text-sm">
+          <ul className="mx-auto flex max-w-3xl flex-col gap-0.5 px-3 py-3 text-base">
             {items.map((i) => {
               const active = isActive(i.href);
               return (
@@ -120,7 +119,7 @@ export function Header({
                     href={i.href}
                     aria-current={active ? "page" : undefined}
                     onClick={() => setOpen(false)}
-                    className={`block rounded-[var(--radius-kobil-sm)] px-3 py-2.5 transition-colors ${
+                    className={`flex min-h-[var(--tap-kobil)] items-center rounded-[var(--radius-kobil-sm)] px-4 font-medium transition-colors ${
                       active
                         ? "bg-[var(--color-kobil-primary-tint)] text-[var(--color-kobil-primary)]"
                         : "text-[var(--color-kobil-text)] hover:bg-[var(--color-kobil-surface-muted)]"
@@ -132,7 +131,7 @@ export function Header({
               );
             })}
             {username ? (
-              <li className="mt-1 border-t border-[var(--color-kobil-border)] px-3 pt-2 text-xs text-[var(--color-kobil-text-muted)]">
+              <li className="mt-1 border-t border-[var(--color-kobil-border)] px-4 pt-3 text-[13px] text-[var(--color-kobil-text-muted)]">
                 {username}
               </li>
             ) : null}
@@ -141,7 +140,7 @@ export function Header({
                 href="/api/auth/logout"
                 prefetch={false}
                 onClick={() => setOpen(false)}
-                className="block rounded-[var(--radius-kobil-sm)] px-3 py-2.5 text-[var(--color-kobil-text-muted)] hover:bg-[var(--color-kobil-surface-muted)]"
+                className="flex min-h-[var(--tap-kobil)] items-center rounded-[var(--radius-kobil-sm)] px-4 font-medium text-[var(--color-kobil-text-muted)] hover:bg-[var(--color-kobil-surface-muted)]"
               >
                 {t.nav.logout}
               </Link>

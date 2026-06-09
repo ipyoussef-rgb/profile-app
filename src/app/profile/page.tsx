@@ -101,34 +101,34 @@ export default async function ProfileOverviewPage() {
 
       <Card>
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <CardTitle>Interessen & Eigenschaften</CardTitle>
             <CardDescription>
-              Deine unter „Attribute" gespeicherten Auswahlen.
+              Deine unter „Interessen" gespeicherten Auswahlen.
             </CardDescription>
           </div>
-          <Link href="/profile/attributes">
+          <Link href="/profile/attributes" className="shrink-0">
             <Button variant="secondary">Bearbeiten</Button>
           </Link>
         </div>
 
         {attributeItems.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--color-kobil-text-muted)]">
+          <p className="mt-3 text-[15px] text-[var(--color-kobil-text-muted)]">
             Du hast noch nichts ausgewählt.{" "}
             <Link
               href="/profile/attributes"
-              className="text-[var(--color-kobil-primary)] underline"
+              className="font-medium text-[var(--color-kobil-primary)] underline"
             >
               Jetzt auswählen
             </Link>
             .
           </p>
         ) : (
-          <dl className="mt-3 space-y-3">
+          <dl className="mt-3 space-y-4">
             {attributeItems.map((c) => (
               <div key={c.slug}>
-                <dt className="text-sm text-[var(--color-kobil-text-muted)]">{c.name}</dt>
-                <dd className="mt-1 flex flex-wrap gap-2">
+                <dt className="text-[13px] text-[var(--color-kobil-text-muted)]">{c.name}</dt>
+                <dd className="mt-1.5 flex flex-wrap gap-2">
                   {c.values.map((v) => (
                     <Badge key={v.id} tone="primary">{v.label}</Badge>
                   ))}

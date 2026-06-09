@@ -38,7 +38,7 @@ export function Overview({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="break-words text-xl font-semibold tracking-tight text-[var(--color-kobil-text)] sm:text-2xl">
+              <h1 className="break-words text-2xl font-semibold tracking-tight text-[var(--color-kobil-text)] sm:text-3xl">
                 {display}
               </h1>
               <Badge tone="primary">
@@ -46,15 +46,15 @@ export function Overview({
               </Badge>
             </div>
             {fullName && profile.display_name && (
-              <p className="mt-1 text-sm text-[var(--color-kobil-text-muted)]">{fullName}</p>
+              <p className="mt-1 text-[15px] text-[var(--color-kobil-text-muted)]">{fullName}</p>
             )}
-            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--color-kobil-text-muted)]">
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[15px] text-[var(--color-kobil-text-muted)]">
               {idp.data.locale ? <span>{t.fields.locale}: {idp.data.locale}</span> : null}
               {idp.data.email ? <span>{idp.data.email}</span> : null}
             </div>
           </div>
-          <Link href="/profile/edit" className="shrink-0">
-            <Button variant="secondary">{t.overview.edit}</Button>
+          <Link href="/profile/edit" className="w-full shrink-0 sm:w-auto">
+            <Button variant="secondary" className="w-full sm:w-auto">{t.overview.edit}</Button>
           </Link>
         </div>
       </Card>
@@ -63,11 +63,11 @@ export function Overview({
         <CardTitle>{t.identity.sectionTitle}</CardTitle>
         <CardDescription>{t.identity.emailReadOnly}</CardDescription>
         {!idp.configured ? (
-          <p className="text-sm text-[var(--color-kobil-text-muted)]">
+          <p className="text-[15px] text-[var(--color-kobil-text-muted)]">
             {t.identity.notConfigured}
           </p>
         ) : (
-          <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-4 text-[15px] sm:grid-cols-2">
             <Row label={t.fields.first_name} value={idp.data.first_name} />
             <Row label={t.fields.last_name} value={idp.data.last_name} />
             <Row label={t.fields.username} value={idp.data.username} />
@@ -101,11 +101,11 @@ export function Overview({
       <Card>
         <CardTitle>Alter</CardTitle>
         {age.over_18 === null ? (
-          <p className="text-sm text-[var(--color-kobil-text-muted)]">
+          <p className="text-[15px] text-[var(--color-kobil-text-muted)]">
             {t.overview.ageUnknown}
           </p>
         ) : (
-          <div className="flex flex-wrap gap-3 text-sm">
+          <div className="flex flex-wrap gap-4 text-[15px]">
             <span className="flex items-center gap-2">
               {t.overview.ageOver16}:
               {age.over_16 ? (
@@ -132,8 +132,8 @@ export function Overview({
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-[var(--color-kobil-text-muted)]">{label}</dt>
-      <dd className="text-[var(--color-kobil-text)]">{value || "—"}</dd>
+      <dt className="text-[13px] text-[var(--color-kobil-text-muted)]">{label}</dt>
+      <dd className="mt-0.5 text-[var(--color-kobil-text)]">{value || "—"}</dd>
     </div>
   );
 }

@@ -66,6 +66,7 @@ export const de = {
     },
     saveIdentity: "Identitätsdaten speichern",
     saveApp: "App-Profil speichern",
+    securityTitle: "Anmeldung & Sicherheit",
     saved: "Gespeichert",
     error: "Änderungen konnten nicht gespeichert werden.",
     changeEmail: "E-Mail-Adresse ändern",

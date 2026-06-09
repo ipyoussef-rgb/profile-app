@@ -16,11 +16,23 @@
   --color-kobil-ring: rgba(0, 58, 112, 0.28);
 
   --font-kobil: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --radius-kobil: 12px;
-  --radius-kobil-sm: 8px;
+  --radius-kobil: 14px;
+  --radius-kobil-sm: 10px;
 
   --shadow-kobil-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
   --shadow-kobil-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+
+  /* Minimum comfortable touch target for a mobile mini-app (Apple HIG 44px,
+     Material 48px). Use as min-height on interactive controls. */
+  --tap-kobil: 48px;
+}
+
+html {
+  /* 16px base keeps body text legible and, crucially, stops iOS Safari from
+     auto-zooming when an <input>/<select> gains focus (any control < 16px
+     triggers the zoom). Mini-app WebViews inherit this behaviour. */
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
 }
 
 html, body {
@@ -37,8 +49,27 @@ html, body {
 
 * { box-sizing: border-box; }
 
+/* Kill the 300ms tap delay and double-tap-to-zoom on controls so the app
+   feels native inside the super-app. */
+button, a, [role="button"], input, select, textarea, label {
+  touch-action: manipulation;
+}
+
+/* Never let form controls fall below 16px — prevents iOS focus zoom. */
+input, select, textarea {
+  font-size: max(16px, 1rem);
+}
+
 *:focus-visible {
   outline: 2px solid var(--color-kobil-ring);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Respect notch / home-indicator insets when embedded full-bleed. */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }

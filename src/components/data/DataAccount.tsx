@@ -72,7 +72,7 @@ export function DataAccount({
       <Card>
         <CardTitle>{t.data.exportTitle}</CardTitle>
         <CardDescription>{t.data.exportDescription}</CardDescription>
-        <Button variant="secondary" onClick={downloadExport}>
+        <Button variant="secondary" className="w-full sm:w-auto" onClick={downloadExport}>
           {t.data.exportButton}
         </Button>
       </Card>
@@ -80,7 +80,7 @@ export function DataAccount({
       <Card>
         <CardTitle>{t.data.deleteTitle}</CardTitle>
         <CardDescription>{t.data.deleteDescription}</CardDescription>
-        <Button variant="danger" onClick={() => setConfirming(true)}>
+        <Button variant="danger" className="w-full sm:w-auto" onClick={() => setConfirming(true)}>
           {t.data.deleteButton}
         </Button>
       </Card>
@@ -90,18 +90,18 @@ export function DataAccount({
         {requests.length === 0 ? (
           <CardDescription>{t.data.requestsEmpty}</CardDescription>
         ) : (
-          <ul className="divide-y divide-[var(--color-kobil-border)] text-sm">
+          <ul className="divide-y divide-[var(--color-kobil-border)] text-base">
             {requests.map((r) => (
-              <li key={r.id} className="flex items-center justify-between py-3">
+              <li key={r.id} className="flex items-center justify-between gap-3 py-3.5">
                 <div>
                   <div className="font-medium text-[var(--color-kobil-text)]">
                     {t.data.requestType[r.request_type as "export" | "deletion"] ?? r.request_type}
                   </div>
-                  <div className="text-xs text-[var(--color-kobil-text-muted)]">
+                  <div className="text-[13px] text-[var(--color-kobil-text-muted)]">
                     {new Date(r.requested_at).toLocaleString()}
                   </div>
                 </div>
-                <span className="text-xs text-[var(--color-kobil-text-muted)]">
+                <span className="text-[13px] text-[var(--color-kobil-text-muted)]">
                   {t.data.requestStatus[r.status as keyof typeof t.data.requestStatus] ?? r.status}
                 </span>
               </li>
@@ -115,25 +115,26 @@ export function DataAccount({
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-confirm-title"
-          className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-10 flex items-end justify-center bg-black/40 p-4 sm:items-center"
           onClick={(e) => e.target === e.currentTarget && setConfirming(false)}
         >
-          <div className="w-full max-w-md rounded-[var(--radius-kobil)] bg-[var(--color-kobil-surface)] p-5 shadow-lg">
-            <h2 id="delete-confirm-title" className="text-lg font-semibold">
+          <div className="w-full max-w-sm rounded-[var(--radius-kobil)] bg-[var(--color-kobil-surface)] p-5 shadow-lg sm:max-w-md sm:p-6">
+            <h2 id="delete-confirm-title" className="text-xl font-semibold">
               {t.data.deleteConfirmTitle}
             </h2>
-            <p className="mt-2 text-sm text-[var(--color-kobil-text-muted)]">
+            <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-kobil-text-muted)]">
               {t.data.deleteConfirmBody}
             </p>
             {deletionError ? (
-              <p className="mt-2 text-sm text-[var(--color-kobil-danger)]">{t.errors.server}</p>
+              <p className="mt-2 text-[15px] text-[var(--color-kobil-danger)]">{t.errors.server}</p>
             ) : null}
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setConfirming(false)} disabled={pending}>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" className="w-full sm:w-auto" onClick={() => setConfirming(false)} disabled={pending}>
                 {t.data.deleteCancel}
               </Button>
               <Button
                 variant="danger"
+                className="w-full sm:w-auto"
                 onClick={confirmDelete}
                 disabled={!confirmReady || pending}
                 title={!confirmReady ? "Wait a moment to confirm…" : undefined}

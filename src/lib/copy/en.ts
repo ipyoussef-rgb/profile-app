@@ -65,6 +65,7 @@ export const en = {
     },
     saveIdentity: "Save identity attributes",
     saveApp: "Save app profile",
+    securityTitle: "Login & security",
     saved: "Saved",
     error: "Could not save changes.",
     changeEmail: "Change email",

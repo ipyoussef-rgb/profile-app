@@ -41,10 +41,6 @@ function failOidc(reason: string, detail: Record<string, unknown> = {}, status =
 }
 
 export async function GET(req: NextRequest) {
-  if (env().PROFILE_EMBED_MODE) {
-    return new NextResponse("OIDC callback is disabled in embedded mode.", { status: 404 });
-  }
-
   // Echo the raw query params the IdP sent so we can see whether KOBIL
   // returned a code (success) or an error= param (rejected before reaching us).
   const qpHasCode = req.nextUrl.searchParams.has("code");
@@ -63,6 +59,12 @@ export async function GET(req: NextRequest) {
   }
 
   const stateRaw = await readOidcStateCookie();
+  // In embedded mode the superapp owns the implicit session; we only process
+  // a callback that WE initiated (a kc_action self-service flow leaves a state
+  // cookie). No state cookie + embed mode = an un-initiated hit → 404.
+  if (env().PROFILE_EMBED_MODE && !stateRaw) {
+    return new NextResponse("OIDC callback is disabled in embedded mode.", { status: 404 });
+  }
   if (!stateRaw) {
     return failOidc("missing_state_cookie", {
       cookie_names: req.cookies.getAll().map((c) => c.name),

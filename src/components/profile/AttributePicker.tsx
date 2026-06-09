@@ -84,12 +84,12 @@ export function AttributePicker({
           <CardTitle>{title}</CardTitle>
           {description ? <CardDescription>{description}</CardDescription> : null}
         </div>
-        <span className="rounded-full border border-[var(--color-kobil-border)] px-2 py-0.5 text-[10px] uppercase tracking-wider text-[var(--color-kobil-text-muted)]">
+        <span className="rounded-full border border-[var(--color-kobil-border)] px-3 py-1 text-[13px] uppercase tracking-wider text-[var(--color-kobil-text-muted)]">
           {modeBadge}
         </span>
       </div>
 
-      <p className="mb-4 text-xs leading-relaxed text-[var(--color-kobil-text-muted)]">
+      <p className="mb-4 text-[13px] leading-relaxed text-[var(--color-kobil-text-muted)]">
         {helper}
       </p>
 
@@ -112,7 +112,7 @@ export function AttributePicker({
                 type="button"
                 onClick={() => toggle(v.id)}
                 aria-pressed={active}
-                className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-150 active:scale-[0.97] ${
+                className={`inline-flex min-h-[var(--tap-kobil)] items-center rounded-full border px-5 py-2.5 text-base font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-kobil-ring)] focus-visible:ring-offset-2 active:scale-[0.97] ${
                   active
                     ? "border-[var(--color-kobil-primary)] bg-[var(--color-kobil-primary)] text-white shadow-[var(--shadow-kobil-sm)]"
                     : "border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)] text-[var(--color-kobil-text)] hover:border-[var(--color-kobil-primary)] hover:bg-[var(--color-kobil-primary-tint)] hover:text-[var(--color-kobil-primary)]"
@@ -126,7 +126,7 @@ export function AttributePicker({
       )}
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-kobil-border)] pt-4">
-        <span className="text-xs text-[var(--color-kobil-text-muted)]">{counter}</span>
+        <span className="text-[13px] text-[var(--color-kobil-text-muted)]">{counter}</span>
         <div className="flex items-center gap-3">
           {msg && (
             <span
