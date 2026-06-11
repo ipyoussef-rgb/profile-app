@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { audit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
-import { attributesToDbColumns, verifyEidSession, type EidResultAttributes } from "@/lib/eid";
+import { attributesToDbColumns, eidEnabled, verifyEidSession, type EidResultAttributes } from "@/lib/eid";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,11 @@ export const dynamic = "force-dynamic";
  *    { sid: string, transactionId?: string, attributes: EidResultAttributes }
  */
 export async function POST(req: NextRequest) {
+  // Feature gate: the eID-Server callback is unauthenticated by design of the
+  // PAOS flow, so it stays fully disabled until EID_ENABLED is set AND this
+  // handler verifies the eID-Server (mTLS/HMAC — see note above).
+  if (!eidEnabled()) return new NextResponse(null, { status: 404 });
+
   let body: {
     sid?: string;
     transactionId?: string;

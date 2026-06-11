@@ -134,7 +134,8 @@ export async function getUserFromIdp(email: string): Promise<KobilIdpUser | null
     clearTimeout(timeout);
   }
   if (res.status === 404) {
-    logEvent("warn", "kobil_get_user_404", { url });
+    // Log the endpoint base only — the full url embeds the user's email (PII).
+    logEvent("warn", "kobil_get_user_404", { endpoint: usersBase() });
     return null;
   }
   if (!res.ok) {
@@ -144,7 +145,7 @@ export async function getUserFromIdp(email: string): Promise<KobilIdpUser | null
     } catch {
       /* ignore */
     }
-    logEvent("warn", "kobil_get_user_failed", { status: res.status, url, body });
+    logEvent("warn", "kobil_get_user_failed", { status: res.status, endpoint: usersBase(), body });
     throw new Error(`KOBIL getUserInfo returned ${res.status}`);
   }
   const raw = (await res.json()) as KobilApiEnvelope | KobilIdpUser;
@@ -215,23 +216,26 @@ export async function updateUserInIdp(
 
   if (!res.ok) {
     // On 405 surface the Allow header so we know exactly which verbs the
-    // endpoint accepts — saves a guessing round-trip next time.
+    // endpoint accepts — saves a guessing round-trip next time. Log the
+    // endpoint base only (the full url embeds the user's email).
     const allow = res.status === 405 ? res.headers.get("allow") : undefined;
     logEvent("warn", "kobil_update_user_failed", {
       status: res.status,
-      url,
+      endpoint: usersBase(),
       body: text.slice(0, 200),
       ...(allow ? { allow } : {}),
     });
     throw new Error(`KOBIL updateProfileUser returned ${res.status}`);
   }
 
+  // Note: we intentionally do NOT log the response body here — on success
+  // KOBIL echoes the full user object (name, email, address = PII). We log
+  // only which field keys we sent.
   const sentAttributeKeys = Object.keys(patch.attributes ?? {});
   logEvent("info", "kobil_update_user_ok", {
     status: res.status,
     sent_scalar_keys: Object.keys(patch).filter((k) => k !== "attributes"),
     sent_attribute_keys: sentAttributeKeys,
-    body: text.slice(0, 200),
   });
 
   // Read-back verification: re-fetch the user and confirm each attribute we

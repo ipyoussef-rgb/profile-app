@@ -16,6 +16,9 @@ const REDACT_KEYS = new Set([
   "display_name",
   "email",
   "birthdate",
+  // `url` paths in this app can embed the user's email (KOBIL v3_user/{email});
+  // redact by default and log a non-PII `endpoint` where detail is needed.
+  "url",
 ]);
 
 export function redact<T>(value: T): T {

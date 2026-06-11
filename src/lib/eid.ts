@@ -28,6 +28,12 @@ export type EidSession = {
   nonce: string;
 };
 
+/** Master gate for the eID feature. While false, all /api/eid/* routes 404,
+ *  which closes the (currently unauthenticated) result webhook. */
+export function eidEnabled(): boolean {
+  return env().EID_ENABLED;
+}
+
 function key() {
   return new TextEncoder().encode(`eid:${env().AUTH_SECRET}`);
 }

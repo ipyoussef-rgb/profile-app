@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { requireUser } from "@/lib/current-user";
-import { eidClientUrl, signEidSession } from "@/lib/eid";
+import { eidClientUrl, eidEnabled, signEidSession } from "@/lib/eid";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  if (!eidEnabled()) return new NextResponse(null, { status: 404 });
   try {
     const user = await requireUser();
     const sid = await signEidSession({ sub: user.sub, nonce: randomUUID() });

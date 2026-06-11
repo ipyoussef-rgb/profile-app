@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyEidSession } from "@/lib/eid";
+import { eidEnabled, verifyEidSession } from "@/lib/eid";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
  *  the eID-Server delivers those out-of-band via POST /api/eid/result.
  *  We just bounce the user back to /profile with a status flag. */
 export async function GET(req: NextRequest) {
+  if (!eidEnabled()) return new NextResponse(null, { status: 404 });
   const sid = req.nextUrl.searchParams.get("sid");
   const result = req.nextUrl.searchParams.get("ResultMajor") ?? "ok";
   const base = env().APP_BASE_URL.replace(/\/$/, "");

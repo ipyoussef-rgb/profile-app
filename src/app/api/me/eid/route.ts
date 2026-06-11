@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
+import { eidEnabled } from "@/lib/eid";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!eidEnabled()) return new NextResponse(null, { status: 404 });
   let user;
   try {
     user = await requireUser();

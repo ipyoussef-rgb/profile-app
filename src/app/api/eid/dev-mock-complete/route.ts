@@ -2,16 +2,17 @@ import { NextResponse } from "next/server";
 import { audit } from "@/lib/audit";
 import { requireUser } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
-import { attributesToDbColumns } from "@/lib/eid";
+import { attributesToDbColumns, eidEnabled } from "@/lib/eid";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 /** DEV-ONLY: simulates a successful eID-Server callback. Enabled when
- *  EID_DEV_MOCK=1. Lets the UI flow be tested end-to-end without a real
- *  Berechtigungszertifikat. Fills in the canonical test-PA values. */
+ *  EID_ENABLED=1 AND EID_DEV_MOCK=1. Lets the UI flow be tested end-to-end
+ *  without a real Berechtigungszertifikat. Fills in the canonical test-PA
+ *  values. */
 export async function POST() {
-  if (!env().EID_DEV_MOCK) {
+  if (!eidEnabled() || !env().EID_DEV_MOCK) {
     return NextResponse.json({ ok: false, error: "disabled" }, { status: 404 });
   }
   let user;

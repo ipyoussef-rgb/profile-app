@@ -31,6 +31,14 @@ const schema = z.object({
     .union([z.literal("1"), z.literal("")])
     .optional()
     .transform((v) => v === "1"),
+  // Master switch for the entire eID feature. OFF by default: while the
+  // feature is unfinished, every /api/eid/* route 404s so the unauthenticated
+  // result webhook can't be reached. Set to "1" only once /api/eid/result
+  // authenticates the eID-Server (mTLS or HMAC).
+  EID_ENABLED: z
+    .union([z.literal("1"), z.literal("")])
+    .optional()
+    .transform((v) => v === "1"),
 });
 
 let cached: z.infer<typeof schema> | null = null;

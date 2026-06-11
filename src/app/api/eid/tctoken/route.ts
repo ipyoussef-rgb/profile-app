@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyEidSession } from "@/lib/eid";
+import { eidEnabled, verifyEidSession } from "@/lib/eid";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 /** TR-03124 TcToken response, fetched by AusweisApp. */
 export async function GET(req: NextRequest) {
+  if (!eidEnabled()) return new NextResponse(null, { status: 404 });
   const sid = req.nextUrl.searchParams.get("sid");
   if (!sid) return new NextResponse("missing sid", { status: 400 });
   const session = await verifyEidSession(sid);
