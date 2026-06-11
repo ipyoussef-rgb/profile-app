@@ -99,7 +99,7 @@ export function Overview({
       </Card>
 
       <Card>
-        <CardTitle>Alter</CardTitle>
+        <CardTitle>{t.overview.ageTitle}</CardTitle>
         {age.over_18 === null ? (
           <p className="text-[15px] text-[var(--color-kobil-text-muted)]">
             {t.overview.ageUnknown}

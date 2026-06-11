@@ -39,6 +39,23 @@ export function CardDescription({ children }: { children: ReactNode }) {
   );
 }
 
+/** Page-level heading (h1). Every screen should render exactly one so the
+ *  heading order (h1 → Card h2) is valid for screen readers. */
+export function PageHeading({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="px-1">
+      <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-kobil-text)] sm:text-3xl">
+        {title}
+      </h1>
+      {subtitle ? (
+        <p className="mt-1.5 text-[15px] leading-relaxed text-[var(--color-kobil-text-muted)]">
+          {subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function Field({
   label,
   helper,
@@ -92,11 +109,15 @@ export function Badge({
   tone?: "neutral" | "success" | "danger" | "primary";
 }) {
   const styles = {
-    neutral: "bg-[var(--color-kobil-surface-muted)] text-[var(--color-kobil-text-muted)]",
+    // text (not muted) on the muted surface clears 4.5:1; muted failed (~2.8:1).
+    neutral:
+      "bg-[var(--color-kobil-surface-muted)] text-[var(--color-kobil-text)] ring-1 ring-inset ring-[var(--color-kobil-border)]",
     primary:
       "bg-[var(--color-kobil-primary-tint)] text-[var(--color-kobil-primary)] ring-1 ring-inset ring-[var(--color-kobil-primary)]/15",
-    success: "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200",
-    danger: "bg-red-50 text-red-800 ring-1 ring-inset ring-red-200",
+    success:
+      "bg-[var(--color-kobil-success-tint)] text-[var(--color-kobil-success)] ring-1 ring-inset ring-[var(--color-kobil-success)]/20",
+    danger:
+      "bg-[var(--color-kobil-danger-tint)] text-[var(--color-kobil-danger)] ring-1 ring-inset ring-[var(--color-kobil-danger)]/20",
   }[tone];
   return (
     <span

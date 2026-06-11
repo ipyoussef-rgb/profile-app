@@ -90,7 +90,7 @@ export function Header({
             onClick={() => setOpen((v) => !v)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] text-[var(--color-kobil-text)] transition-colors hover:bg-[var(--color-kobil-surface-muted)] md:hidden"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               {open ? (
                 <>
                   <line x1="6" y1="6" x2="18" y2="18" />

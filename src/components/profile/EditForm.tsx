@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardTitle,
   Field,
+  PageHeading,
   inputClass,
 } from "@/components/ui/Card";
 import { getCopy, type Locale } from "@/lib/copy";
@@ -36,6 +37,8 @@ export function EditForm({
 
   return (
     <div className="space-y-4">
+      <PageHeading title={t.edit.pageTitle} />
+
       {/* Identity attributes (KOBIL Identity) */}
       <form action={submitIdentity} className="space-y-0">
         <Card>
@@ -109,46 +112,59 @@ export function EditForm({
               {t.edit.helpers.address}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-              <input
-                name="address.street"
-                placeholder={t.fields.street}
-                defaultValue={idp.data.address.street ?? ""}
-                autoComplete="address-line1"
-                disabled={!idp.configured}
-                className={inputClass}
-              />
-              <input
-                name="address.locality"
-                placeholder={t.fields.locality}
-                defaultValue={idp.data.address.locality ?? ""}
-                autoComplete="address-level2"
-                disabled={!idp.configured}
-                className={inputClass}
-              />
-              <input
-                name="address.postal_code"
-                placeholder={t.fields.postal_code}
-                defaultValue={idp.data.address.postal_code ?? ""}
-                autoComplete="postal-code"
-                inputMode="numeric"
-                disabled={!idp.configured}
-                className={inputClass}
-              />
-              <input
-                name="address.country"
-                placeholder={t.fields.country}
-                maxLength={2}
-                defaultValue={idp.data.address.country ?? ""}
-                autoComplete="country"
-                disabled={!idp.configured}
-                className={`${inputClass} uppercase`}
-              />
+              <Field label={t.fields.street}>
+                <input
+                  name="address.street"
+                  placeholder={t.fields.street}
+                  defaultValue={idp.data.address.street ?? ""}
+                  autoComplete="address-line1"
+                  disabled={!idp.configured}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label={t.fields.locality}>
+                <input
+                  name="address.locality"
+                  placeholder={t.fields.locality}
+                  defaultValue={idp.data.address.locality ?? ""}
+                  autoComplete="address-level2"
+                  disabled={!idp.configured}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label={t.fields.postal_code}>
+                <input
+                  name="address.postal_code"
+                  placeholder={t.fields.postal_code}
+                  defaultValue={idp.data.address.postal_code ?? ""}
+                  autoComplete="postal-code"
+                  inputMode="numeric"
+                  disabled={!idp.configured}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label={t.fields.country}>
+                <input
+                  name="address.country"
+                  placeholder="DE"
+                  maxLength={2}
+                  defaultValue={idp.data.address.country ?? ""}
+                  autoComplete="country"
+                  disabled={!idp.configured}
+                  className={`${inputClass} uppercase`}
+                />
+              </Field>
             </div>
           </fieldset>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <Button type="submit" className="w-full sm:w-auto" disabled={idPending || !idp.configured}>
-              {idPending ? "…" : t.edit.saveIdentity}
+            <Button
+              type="submit"
+              className="w-full sm:w-auto"
+              aria-busy={idPending}
+              disabled={idPending || !idp.configured}
+            >
+              {idPending ? t.edit.saving : t.edit.saveIdentity}
             </Button>
             {idResult?.ok ? (
               <span className="text-[15px] text-[var(--color-kobil-success)]">{t.edit.saved}</span>
@@ -169,7 +185,10 @@ export function EditForm({
             </ul>
           ) : null}
           {idResult?.ok && idResult.warning ? (
-            <p className="mt-3 rounded-[var(--radius-kobil-sm)] bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
+            <p
+              role="status"
+              className="mt-3 rounded-[var(--radius-kobil-sm)] bg-[var(--color-kobil-warning-tint)] px-3 py-2 text-[13px] text-[var(--color-kobil-warning)] ring-1 ring-inset ring-[var(--color-kobil-warning)]/20"
+            >
               {idResult.warning}
             </p>
           ) : null}

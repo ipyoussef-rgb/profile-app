@@ -12,7 +12,11 @@
   --color-kobil-text-muted: #475569;
   --color-kobil-border: #d8dee9;
   --color-kobil-danger: #b91c1c;
+  --color-kobil-danger-tint: #fdecec;
   --color-kobil-success: #047857;
+  --color-kobil-success-tint: #e3f5ee;
+  --color-kobil-warning: #92600a;
+  --color-kobil-warning-tint: #fdf3da;
   --color-kobil-ring: rgba(0, 58, 112, 0.28);
 
   --font-kobil: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

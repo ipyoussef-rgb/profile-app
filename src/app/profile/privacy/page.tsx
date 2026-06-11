@@ -2,7 +2,7 @@ import { requireUserOrRedirect } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
 import { getCopy } from "@/lib/copy";
 import { CONSENT_PURPOSES, LEGAL_BASIS, type ConsentPurpose } from "@/lib/schemas/consents";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Card, PageHeading } from "@/components/ui/Card";
 import { ConsentToggle } from "@/components/privacy/ConsentToggle";
 import { DEFAULT_LOCALE } from "@/lib/copy";
 import Link from "next/link";
@@ -24,10 +24,9 @@ export default async function PrivacyPage() {
 
   return (
     <div className="space-y-4">
+      <PageHeading title={t.privacy.title} subtitle={t.privacy.intro} />
       <Card>
-        <CardTitle>{t.privacy.title}</CardTitle>
-        <CardDescription>{t.privacy.intro}</CardDescription>
-        <div className="-mt-1">
+        <div>
           {(CONSENT_PURPOSES as readonly ConsentPurpose[]).map((p) => {
             const r = latestByPurpose.get(p);
             const purposeCopy = t.privacy.purposes[p];
@@ -55,7 +54,10 @@ export default async function PrivacyPage() {
         Jede Änderung erzeugt einen neuen, unveränderlichen Eintrag im Einwilligungs-Ledger;
         frühere Entscheidungen bleiben für Nachweiszwecke erhalten ({Object.keys(LEGAL_BASIS).length} Zwecke).
       </p>
-      <Link href="/profile" className="inline-block text-sm text-[var(--color-kobil-primary)] underline">
+      <Link
+        href="/profile"
+        className="inline-flex min-h-[var(--tap-kobil)] items-center text-[15px] font-medium text-[var(--color-kobil-primary)] underline"
+      >
         ← {t.back.toProfile}
       </Link>
     </div>

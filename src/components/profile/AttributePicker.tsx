@@ -94,12 +94,10 @@ export function AttributePicker({
       </p>
 
       {values.length === 0 ? (
-        <p className="rounded-[var(--radius-kobil-sm)] border border-dashed border-[var(--color-kobil-border)] px-3 py-4 text-center text-sm text-[var(--color-kobil-text-muted)]">
-          {locale === "de" ? "Noch keine Werte für " : "No values configured yet for "}
-          <code className="rounded bg-[var(--color-kobil-surface-muted)] px-1 py-0.5 text-xs">
-            {catalogSlug}
-          </code>
-          .
+        <p className="rounded-[var(--radius-kobil-sm)] border border-dashed border-[var(--color-kobil-border)] px-3 py-4 text-center text-[15px] text-[var(--color-kobil-text-muted)]">
+          {locale === "de"
+            ? "Für diese Kategorie sind noch keine Optionen verfügbar."
+            : "No options are available for this category yet."}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -139,7 +137,7 @@ export function AttributePicker({
               {msg.text}
             </span>
           )}
-          <Button type="button" onClick={save} disabled={pending || !dirty}>
+          <Button type="button" onClick={save} aria-busy={pending} disabled={pending || !dirty}>
             {pending
               ? locale === "de"
                 ? "Speichere…"

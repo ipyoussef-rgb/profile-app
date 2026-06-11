@@ -6,7 +6,7 @@ import { loadIdpProfile } from "@/lib/idp-prefill";
 import { prisma } from "@/lib/db";
 import { Overview } from "@/components/profile/Overview";
 import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui/Card";
-import { DEFAULT_LOCALE } from "@/lib/copy";
+import { DEFAULT_LOCALE, getCopy } from "@/lib/copy";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +95,8 @@ export default async function ProfileOverviewPage() {
     a.slug.localeCompare(b.slug),
   );
 
+  const t = getCopy(DEFAULT_LOCALE);
+
   return (
     <div className="space-y-4">
       <Overview profile={profile} idp={idp} locale={DEFAULT_LOCALE} />
@@ -102,24 +104,22 @@ export default async function ProfileOverviewPage() {
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <CardTitle>Interessen & Eigenschaften</CardTitle>
-            <CardDescription>
-              Deine unter „Interessen" gespeicherten Auswahlen.
-            </CardDescription>
+            <CardTitle>{t.attributes.title}</CardTitle>
+            <CardDescription>{t.attributes.overviewHint}</CardDescription>
           </div>
           <Link href="/profile/attributes" className="shrink-0">
-            <Button variant="secondary">Bearbeiten</Button>
+            <Button variant="secondary">{t.attributes.edit}</Button>
           </Link>
         </div>
 
         {attributeItems.length === 0 ? (
           <p className="mt-3 text-[15px] text-[var(--color-kobil-text-muted)]">
-            Du hast noch nichts ausgewählt.{" "}
+            {t.attributes.empty}{" "}
             <Link
               href="/profile/attributes"
               className="font-medium text-[var(--color-kobil-primary)] underline"
             >
-              Jetzt auswählen
+              {t.attributes.emptyCta}
             </Link>
             .
           </p>

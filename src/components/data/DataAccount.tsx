@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { requestDeletionAction } from "@/app/profile/data-and-account/actions";
-import { Button, Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Button, Card, CardDescription, CardTitle, PageHeading } from "@/components/ui/Card";
 import { getCopy, type Locale } from "@/lib/copy";
 
 type PrivacyRequest = {
@@ -39,6 +39,18 @@ export function DataAccount({
     return () => clearTimeout(id);
   }, [confirming]);
 
+  // Modal a11y: close on Escape and move focus into the dialog (onto the safe
+  // "Cancel" action) when it opens.
+  useEffect(() => {
+    if (!confirming) return;
+    document.getElementById("delete-modal-cancel")?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirming(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [confirming]);
+
   function downloadExport() {
     // Server returns Content-Disposition: attachment — browser handles the save.
     window.location.href = "/api/me/profile/export";
@@ -69,6 +81,8 @@ export function DataAccount({
 
   return (
     <div className="space-y-4">
+      <PageHeading title={t.data.title} />
+
       <Card>
         <CardTitle>{t.data.exportTitle}</CardTitle>
         <CardDescription>{t.data.exportDescription}</CardDescription>
@@ -111,14 +125,21 @@ export function DataAccount({
       </Card>
 
       {confirming ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-confirm-title"
-          className="fixed inset-0 z-10 flex items-end justify-center bg-black/40 p-4 sm:items-center"
-          onClick={(e) => e.target === e.currentTarget && setConfirming(false)}
-        >
-          <div className="w-full max-w-sm rounded-[var(--radius-kobil)] bg-[var(--color-kobil-surface)] p-5 shadow-lg sm:max-w-md sm:p-6">
+        <div className="fixed inset-0 z-10 flex items-end justify-center p-4 sm:items-center">
+          {/* Accessible backdrop: a real button so it's keyboard-operable and
+              passes a11y lint, instead of a click handler on a plain div. */}
+          <button
+            type="button"
+            aria-label={t.data.deleteCancel}
+            onClick={() => setConfirming(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirm-title"
+            className="relative w-full max-w-sm rounded-[var(--radius-kobil)] bg-[var(--color-kobil-surface)] p-5 shadow-lg sm:max-w-md sm:p-6"
+          >
             <h2 id="delete-confirm-title" className="text-xl font-semibold">
               {t.data.deleteConfirmTitle}
             </h2>
@@ -126,10 +147,18 @@ export function DataAccount({
               {t.data.deleteConfirmBody}
             </p>
             {deletionError ? (
-              <p className="mt-2 text-[15px] text-[var(--color-kobil-danger)]">{t.errors.server}</p>
+              <p role="alert" className="mt-2 text-[15px] text-[var(--color-kobil-danger)]">
+                {t.errors.server}
+              </p>
             ) : null}
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button variant="secondary" className="w-full sm:w-auto" onClick={() => setConfirming(false)} disabled={pending}>
+              <Button
+                id="delete-modal-cancel"
+                variant="secondary"
+                className="w-full sm:w-auto"
+                onClick={() => setConfirming(false)}
+                disabled={pending}
+              >
                 {t.data.deleteCancel}
               </Button>
               <Button
@@ -137,7 +166,7 @@ export function DataAccount({
                 className="w-full sm:w-auto"
                 onClick={confirmDelete}
                 disabled={!confirmReady || pending}
-                title={!confirmReady ? "Wait a moment to confirm…" : undefined}
+                title={!confirmReady ? t.data.deleteConfirmWait : undefined}
               >
                 {pending ? "…" : t.data.deleteConfirm}
               </Button>

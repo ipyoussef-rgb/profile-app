@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireUserOrRedirect } from "@/lib/current-user";
 import { prisma } from "@/lib/db";
 import { AttributePicker } from "@/components/profile/AttributePicker";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { PageHeading } from "@/components/ui/Card";
 import { DEFAULT_LOCALE, getCopy } from "@/lib/copy";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +33,7 @@ export default async function AttributesPage() {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardTitle>{t.attributes.title}</CardTitle>
-        <CardDescription>{t.attributes.saveHint}</CardDescription>
-      </Card>
+      <PageHeading title={t.attributes.title} subtitle={t.attributes.saveHint} />
       {catalogs.map((c) => (
         <AttributePicker
           key={c.id}
@@ -56,11 +53,14 @@ export default async function AttributesPage() {
         />
       ))}
       {catalogs.length === 0 && (
-        <p className="text-sm text-[var(--color-kobil-text-muted)]">
-          Es sind derzeit keine Kataloge aktiv. Bitte einen Administrator in der Admin-Konsole.
+        <p className="text-[15px] text-[var(--color-kobil-text-muted)]">
+          Es sind derzeit keine Kategorien aktiv. Bitte wenden Sie sich an einen Administrator.
         </p>
       )}
-      <Link href="/profile" className="inline-block text-sm text-[var(--color-kobil-primary)] underline">
+      <Link
+        href="/profile"
+        className="inline-flex min-h-[var(--tap-kobil)] items-center text-[15px] font-medium text-[var(--color-kobil-primary)] underline"
+      >
         ← {t.back.toProfile}
       </Link>
     </div>
