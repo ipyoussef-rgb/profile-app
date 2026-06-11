@@ -168,6 +168,11 @@ export function EditForm({
               ))}
             </ul>
           ) : null}
+          {idResult?.ok && idResult.warning ? (
+            <p className="mt-3 rounded-[var(--radius-kobil-sm)] bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
+              {idResult.warning}
+            </p>
+          ) : null}
         </Card>
       </form>
 

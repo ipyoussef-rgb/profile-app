@@ -167,7 +167,22 @@ export type KobilIdpUserPatch = Partial<{
   attributes: Record<string, string[]>;
 }>;
 
-export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): Promise<void> {
+/** Result of a write + read-back verification. `verified` is true only when
+ *  every attribute key we sent is present (non-empty) in the re-fetched user.
+ *  Lets callers tell "KOBIL accepted AND persisted" apart from "KOBIL returned
+ *  200 but silently dropped the attributes" (e.g. undeclared attributes under
+ *  Keycloak's declarative User Profile). */
+export type UpdateVerification = {
+  verified: boolean;
+  sentAttributeKeys: string[];
+  persistedKeys: string[];
+  missingKeys: string[];
+};
+
+export async function updateUserInIdp(
+  email: string,
+  patch: KobilIdpUserPatch,
+): Promise<UpdateVerification> {
   // KOBIL `updateUser`: PUT {issuer}/v3_user/{email}/update. This tenant
   // returned USER_NOT_FOUND when called with the UUID even though the GET
   // by UUID succeeds (verified 2026-05-18) — keying by email works.
@@ -190,13 +205,15 @@ export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): 
   } finally {
     clearTimeout(timeout);
   }
+
+  let text = "";
+  try {
+    text = await res.text();
+  } catch {
+    /* ignore */
+  }
+
   if (!res.ok) {
-    let text = "";
-    try {
-      text = await res.text();
-    } catch {
-      /* ignore */
-    }
     // On 405 surface the Allow header so we know exactly which verbs the
     // endpoint accepts — saves a guessing round-trip next time.
     const allow = res.status === 405 ? res.headers.get("allow") : undefined;
@@ -208,6 +225,45 @@ export async function updateUserInIdp(email: string, patch: KobilIdpUserPatch): 
     });
     throw new Error(`KOBIL updateProfileUser returned ${res.status}`);
   }
+
+  const sentAttributeKeys = Object.keys(patch.attributes ?? {});
+  logEvent("info", "kobil_update_user_ok", {
+    status: res.status,
+    sent_scalar_keys: Object.keys(patch).filter((k) => k !== "attributes"),
+    sent_attribute_keys: sentAttributeKeys,
+    body: text.slice(0, 200),
+  });
+
+  // Read-back verification: re-fetch the user and confirm each attribute we
+  // sent actually landed. This is the automated equivalent of "save, then
+  // check via getUserInfo" — the result is logged AND returned to the caller.
+  let persistedKeys = sentAttributeKeys;
+  let missingKeys: string[] = [];
+  if (sentAttributeKeys.length > 0) {
+    try {
+      const after = await getUserFromIdp(email);
+      if (after) {
+        persistedKeys = sentAttributeKeys.filter(
+          (k) => readIdpAttribute(after, k) !== undefined,
+        );
+        missingKeys = sentAttributeKeys.filter((k) => !persistedKeys.includes(k));
+      }
+    } catch {
+      /* verification GET failed — leave optimistic persistedKeys */
+    }
+    logEvent(missingKeys.length > 0 ? "warn" : "info", "kobil_update_user_verify", {
+      sent_attribute_keys: sentAttributeKeys,
+      persisted_keys: persistedKeys,
+      missing_keys: missingKeys,
+    });
+  }
+
+  return {
+    verified: missingKeys.length === 0,
+    sentAttributeKeys,
+    persistedKeys,
+    missingKeys,
+  };
 }
 
 /** Read helper that copes with flat OR wrapped attributes. */

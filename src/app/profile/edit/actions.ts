@@ -17,7 +17,7 @@ import {
 } from "@/lib/kobil-idp";
 
 export type SaveResult =
-  | { ok: true }
+  | { ok: true; warning?: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 /* App-profile save (display_name, avatar_url, profile_visibility, etc.). */
@@ -143,8 +143,9 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
         "KOBIL Users API requires an email; your session has no email claim. Sign out + sign in to refresh.",
     };
   }
+  let verification;
   try {
-    await updateUserInIdp(user.email, idpPatch);
+    verification = await updateUserInIdp(user.email, idpPatch);
   } catch (err) {
     if (err instanceof KobilIdpNotConfiguredError) {
       return {
@@ -167,5 +168,18 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   });
   revalidatePath("/profile");
   revalidatePath("/profile/edit");
+
+  // KOBIL returned 200 but the read-back shows some attributes didn't persist
+  // — almost always Keycloak's declarative User Profile dropping undeclared
+  // custom attributes (street/locality/postal_code/country). Tell the user
+  // instead of pretending the save fully worked.
+  if (verification && verification.missingKeys.length > 0) {
+    return {
+      ok: true,
+      warning: `KOBIL hat folgende Felder nicht übernommen: ${verification.missingKeys.join(
+        ", ",
+      )}. Diese Attribute sind im Realm vermutlich nicht im User-Profile deklariert.`,
+    };
+  }
   return { ok: true };
 }
