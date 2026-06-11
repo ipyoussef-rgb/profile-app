@@ -8,6 +8,7 @@ export const en = {
     edit: "Edit profile",
     attributes: "Interests",
     postfach: "Mailbox",
+    comingSoon: "Coming soon",
     privacy: "Privacy",
     data: "Data & account",
     logout: "Sign out",

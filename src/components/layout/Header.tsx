@@ -20,7 +20,7 @@ export function Header({
   const items = [
     { href: "/profile", label: t.nav.overview },
     { href: "/profile/attributes", label: t.nav.attributes },
-    { href: "/profile/postfach", label: t.nav.postfach },
+    { href: "/profile/postfach", label: t.nav.postfach, disabled: true },
     { href: "/profile/data-and-account", label: t.nav.data },
   ];
 
@@ -50,6 +50,19 @@ export function Header({
 
         <nav className="hidden gap-1 text-[15px] md:flex">
           {items.map((i) => {
+            if (i.disabled) {
+              return (
+                <span
+                  key={i.href}
+                  aria-disabled="true"
+                  title={t.nav.comingSoon}
+                  className="cursor-not-allowed rounded-[var(--radius-kobil-sm)] px-4 py-2 font-medium text-[var(--color-kobil-text-muted)]/60"
+                >
+                  {i.label}{" "}
+                  <span className="text-[12px] font-normal">({t.nav.comingSoon})</span>
+                </span>
+              );
+            }
             const active = isActive(i.href);
             return (
               <Link
@@ -113,6 +126,19 @@ export function Header({
         <nav className="border-t border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)] md:hidden">
           <ul className="mx-auto flex max-w-3xl flex-col gap-0.5 px-3 py-3 text-base">
             {items.map((i) => {
+              if (i.disabled) {
+                return (
+                  <li key={i.href}>
+                    <span
+                      aria-disabled="true"
+                      className="flex min-h-[var(--tap-kobil)] items-center gap-2 rounded-[var(--radius-kobil-sm)] px-4 font-medium text-[var(--color-kobil-text-muted)]/60"
+                    >
+                      {i.label}
+                      <span className="text-[13px] font-normal">({t.nav.comingSoon})</span>
+                    </span>
+                  </li>
+                );
+              }
               const active = isActive(i.href);
               return (
                 <li key={i.href}>
