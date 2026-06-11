@@ -7,6 +7,7 @@ export const en = {
     overview: "Profile",
     edit: "Edit profile",
     attributes: "Interests",
+    postfach: "Mailbox",
     privacy: "Privacy",
     data: "Data & account",
     logout: "Sign out",
@@ -132,6 +133,20 @@ export const en = {
       completed: "Completed",
       rejected: "Rejected",
     },
+  },
+  postfach: {
+    title: "Mailbox",
+    intro:
+      "Set the email address where you want to receive messages and notifications. This defaults to your login email.",
+    label: "Mailbox email address",
+    helper: "Your messages will be delivered to this address.",
+    useLoginEmail: "Use login email",
+    save: "Save mailbox",
+    saving: "Saving …",
+    saved: "Mailbox saved.",
+    currentLabel: "Current mailbox",
+    none: "No mailbox set yet.",
+    invalid: "Please enter a valid email address.",
   },
   attributes: {
     title: "Interests & traits",

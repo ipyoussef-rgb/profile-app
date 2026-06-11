@@ -49,6 +49,9 @@ export const profileUpdateSchema = z
   .object({
     display_name: z.string().trim().max(80).optional(),
     avatar_url: z.string().url().max(2048).optional(),
+    // Postfach: the mailbox address where the user receives messages/notices.
+    // Defaults to their login email but can be any valid address.
+    postfach_email: z.string().trim().toLowerCase().email().max(255).optional(),
     profile_visibility: z.enum(PROFILE_VISIBILITY).optional(),
     notification_preferences: notificationPrefsSchema.optional(),
     privacy_settings: privacySettingsSchema.optional(),

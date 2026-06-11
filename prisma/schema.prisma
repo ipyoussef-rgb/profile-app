@@ -26,6 +26,7 @@ model Profile {
   user_id                  String    @id @db.Uuid
   display_name             String?   @db.VarChar(80)
   avatar_url               String?
+  postfach_email           String?   @db.VarChar(255)
   profile_visibility       String    @default("private") // private | miniapps | public
   notification_preferences Json?     @map("notification_preferences_json")
   privacy_settings         Json?     @map("privacy_settings_json")

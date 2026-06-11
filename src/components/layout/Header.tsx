@@ -20,6 +20,7 @@ export function Header({
   const items = [
     { href: "/profile", label: t.nav.overview },
     { href: "/profile/attributes", label: t.nav.attributes },
+    { href: "/profile/postfach", label: t.nav.postfach },
     { href: "/profile/data-and-account", label: t.nav.data },
   ];
 

@@ -7,6 +7,7 @@ export const de = {
     overview: "Profil",
     edit: "Profil bearbeiten",
     attributes: "Interessen",
+    postfach: "Postfach",
     privacy: "Datenschutz",
     data: "Daten & Konto",
     logout: "Abmelden",
@@ -133,6 +134,20 @@ export const de = {
       completed: "Abgeschlossen",
       rejected: "Abgelehnt",
     },
+  },
+  postfach: {
+    title: "Postfach",
+    intro:
+      "Legen Sie die E-Mail-Adresse fest, an die Sie Nachrichten und Benachrichtigungen erhalten möchten. Standardmäßig ist dies Ihre Anmelde-E-Mail.",
+    label: "E-Mail-Adresse des Postfachs",
+    helper: "An diese Adresse werden Ihre Nachrichten zugestellt.",
+    useLoginEmail: "Anmelde-E-Mail übernehmen",
+    save: "Postfach speichern",
+    saving: "Speichert …",
+    saved: "Postfach gespeichert.",
+    currentLabel: "Aktuelles Postfach",
+    none: "Noch kein Postfach hinterlegt.",
+    invalid: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
   },
   attributes: {
     title: "Interessen & Eigenschaften",

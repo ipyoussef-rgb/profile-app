@@ -13,6 +13,7 @@ export async function upsertProfile(userId: string, patch: ProfileUpdateInput) {
   if (patch.display_name !== undefined)
     data.display_name = sanitizeText(patch.display_name) || null;
   if (patch.avatar_url !== undefined) data.avatar_url = patch.avatar_url;
+  if (patch.postfach_email !== undefined) data.postfach_email = patch.postfach_email;
   if (patch.profile_visibility !== undefined) data.profile_visibility = patch.profile_visibility;
   if (patch.notification_preferences !== undefined)
     data.notification_preferences = patch.notification_preferences as Prisma.InputJsonValue;
@@ -37,6 +38,7 @@ export async function anonymizeProfile(userId: string) {
     data: {
       display_name: null,
       avatar_url: null,
+      postfach_email: null,
       profile_visibility: "private",
       notification_preferences: Prisma.DbNull,
       privacy_settings: Prisma.DbNull,
