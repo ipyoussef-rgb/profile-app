@@ -12,11 +12,10 @@ export const en = {
     logout: "Sign out",
   },
   identity: {
-    sectionTitle: "Identity attributes (from KOBIL Identity)",
+    sectionTitle: "Identity attributes",
     sectionHelper:
-      "These attributes are managed in KOBIL Identity. Changes are synced directly to your identity account.",
-    viaKobilIdentity: "via KOBIL Identity",
-    emailReadOnly: "Your email is managed by KOBIL Identity.",
+      "These attributes are managed centrally. Changes are synced directly to your identity account.",
+    emailReadOnly: "Your email is managed centrally.",
     emailVerified: "Email verified",
     emailNotVerified: "Email not verified",
     notConfigured:
@@ -52,9 +51,6 @@ export const en = {
   },
   edit: {
     title: "Edit identity attributes",
-    appTitle: "App profile",
-    appHelper:
-      "These fields live in the Profile-Service database, not in KOBIL Identity.",
     helpers: {
       optional: "Optional. Used only to personalize your profile. You can remove this at any time.",
       address: "Optional. You can remove this at any time.",
@@ -65,7 +61,6 @@ export const en = {
       public: "Public",
     },
     saveIdentity: "Save identity attributes",
-    saveApp: "Save app profile",
     securityTitle: "Login & security",
     pageTitle: "Edit profile",
     saving: "Saving …",
@@ -75,7 +70,7 @@ export const en = {
     changePhone: "Change phone number",
     changePassword: "Change password",
     idpHelper:
-      "Email and password changes are handled by KOBIL Identity. After you finish, you will be redirected back to your profile.",
+      "Email and password changes are handled centrally. After you finish, you will be redirected back to your profile.",
   },
   privacy: {
     title: "Privacy & consents",

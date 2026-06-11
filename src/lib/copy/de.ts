@@ -12,11 +12,10 @@ export const de = {
     logout: "Abmelden",
   },
   identity: {
-    sectionTitle: "Identitätsdaten (von KOBIL Identity)",
+    sectionTitle: "Identitätsdaten",
     sectionHelper:
-      "Diese Angaben werden in KOBIL Identity gepflegt. Änderungen werden direkt mit Ihrem Identitätskonto synchronisiert.",
-    viaKobilIdentity: "via KOBIL Identity",
-    emailReadOnly: "Ihre E-Mail-Adresse wird von KOBIL Identity verwaltet.",
+      "Diese Angaben werden zentral gepflegt. Änderungen werden direkt mit Ihrem Identitätskonto synchronisiert.",
+    emailReadOnly: "Ihre E-Mail-Adresse wird zentral verwaltet.",
     emailVerified: "E-Mail bestätigt",
     emailNotVerified: "E-Mail nicht bestätigt",
     notConfigured:
@@ -52,9 +51,6 @@ export const de = {
   },
   edit: {
     title: "Identitätsdaten bearbeiten",
-    appTitle: "App-Profil",
-    appHelper:
-      "Diese Felder werden in der Profile-Service-Datenbank gespeichert, nicht in KOBIL Identity.",
     helpers: {
       optional:
         "Optional. Wird nur zur Personalisierung Ihres Profils verwendet. Sie können dies jederzeit entfernen.",
@@ -66,7 +62,6 @@ export const de = {
       public: "Öffentlich",
     },
     saveIdentity: "Identitätsdaten speichern",
-    saveApp: "App-Profil speichern",
     securityTitle: "Anmeldung & Sicherheit",
     pageTitle: "Profil bearbeiten",
     saving: "Speichert …",
@@ -76,7 +71,7 @@ export const de = {
     changePhone: "Telefonnummer ändern",
     changePassword: "Passwort ändern",
     idpHelper:
-      "E-Mail- und Passwortänderungen werden von KOBIL Identity durchgeführt. Nach Abschluss werden Sie zurück zu Ihrem Profil geleitet.",
+      "E-Mail- und Passwortänderungen werden zentral durchgeführt. Nach Abschluss werden Sie zurück zu Ihrem Profil geleitet.",
   },
   privacy: {
     title: "Datenschutz & Einwilligungen",

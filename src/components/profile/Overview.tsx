@@ -49,7 +49,6 @@ export function Overview({
               <p className="mt-1 text-[15px] text-[var(--color-kobil-text-muted)]">{fullName}</p>
             )}
             <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[15px] text-[var(--color-kobil-text-muted)]">
-              {idp.data.locale ? <span>{t.fields.locale}: {idp.data.locale}</span> : null}
               {idp.data.email ? <span>{idp.data.email}</span> : null}
             </div>
           </div>
@@ -85,7 +84,6 @@ export function Overview({
               }
             />
             <Row label={t.fields.phone} value={idp.data.phone} />
-            <Row label={t.fields.locale} value={idp.data.locale} />
             <Row
               label={t.fields.birthdate}
               value={formatBirthdateForDisplay(idp.data.birthdate, locale)}

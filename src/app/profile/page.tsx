@@ -102,18 +102,11 @@ export default async function ProfileOverviewPage() {
       <Overview profile={profile} idp={idp} locale={DEFAULT_LOCALE} />
 
       <Card>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle>{t.attributes.title}</CardTitle>
-            <CardDescription>{t.attributes.overviewHint}</CardDescription>
-          </div>
-          <Link href="/profile/attributes" className="shrink-0">
-            <Button variant="secondary">{t.attributes.edit}</Button>
-          </Link>
-        </div>
+        <CardTitle>{t.attributes.title}</CardTitle>
+        <CardDescription>{t.attributes.overviewHint}</CardDescription>
 
         {attributeItems.length === 0 ? (
-          <p className="mt-3 text-[15px] text-[var(--color-kobil-text-muted)]">
+          <p className="text-[15px] text-[var(--color-kobil-text-muted)]">
             {t.attributes.empty}{" "}
             <Link
               href="/profile/attributes"
@@ -124,7 +117,7 @@ export default async function ProfileOverviewPage() {
             .
           </p>
         ) : (
-          <dl className="mt-3 space-y-4">
+          <dl className="space-y-4">
             {attributeItems.map((c) => (
               <div key={c.slug}>
                 <dt className="text-[13px] text-[var(--color-kobil-text-muted)]">{c.name}</dt>
@@ -137,6 +130,12 @@ export default async function ProfileOverviewPage() {
             ))}
           </dl>
         )}
+
+        <Link href="/profile/attributes" className="mt-5 block sm:inline-block">
+          <Button variant="secondary" className="w-full sm:w-auto">
+            {t.attributes.edit}
+          </Button>
+        </Link>
       </Card>
     </div>
   );

@@ -84,15 +84,6 @@ export function EditForm({
                 className={inputClass}
               />
             </Field>
-            <Field label={t.fields.locale} helper="z. B. de, de-DE, en-US">
-              <input
-                name="locale"
-                defaultValue={idp.data.locale ?? ""}
-                placeholder="de"
-                disabled={!idp.configured}
-                className={inputClass}
-              />
-            </Field>
             <Field label={t.fields.birthdate} helper="YYYY-MM-DD">
               <input
                 name="birthdate"
