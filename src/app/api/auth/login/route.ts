@@ -3,6 +3,7 @@ import * as client from "openid-client";
 import { env } from "@/lib/env";
 import { getOidcConfig, redirectUri } from "@/lib/oidc";
 import { OIDC_STATE_COOKIE } from "@/lib/session";
+import { logEvent } from "@/lib/safe-log";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,18 @@ export async function GET(req: NextRequest) {
     authParams.kc_action = kc_action;
   }
   const authUrl = client.buildAuthorizationUrl(config, authParams);
+
+  // Log the EXACT redirect_uri we send so it can be copy-pasted into the
+  // Keycloak client's "Valid redirect URIs". A mismatch here is the most
+  // common cause of the IdP rejecting the flow before the callback runs.
+  logEvent("info", "oidc_login_start", {
+    redirect_uri: authParams.redirect_uri,
+    authorization_endpoint: authUrl.origin + authUrl.pathname,
+    client_id: env().KOBIL_MINIAPP_CLIENT_ID,
+    kc_action: kc_action ?? null,
+    returnTo,
+    app_base_url: env().APP_BASE_URL,
+  });
 
   // Attach the state cookie directly to the redirect response — Next.js 15's
   // cookies().set() from next/headers doesn't reliably ship Set-Cookie

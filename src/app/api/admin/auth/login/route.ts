@@ -3,6 +3,7 @@ import * as client from "openid-client";
 import { env } from "@/lib/env";
 import { getAdminOidcConfig, adminRedirectUri } from "@/lib/admin-oidc";
 import { ADMIN_OIDC_STATE_COOKIE } from "@/lib/admin-session";
+import { logEvent } from "@/lib/safe-log";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,14 @@ export async function GET(req: NextRequest) {
     code_challenge_method: "S256",
     state,
     nonce,
+  });
+
+  logEvent("info", "admin_oidc_login_start", {
+    redirect_uri: adminRedirectUri(),
+    authorization_endpoint: authUrl.origin + authUrl.pathname,
+    client_id: env().KOBIL_ADMIN_CLIENT_ID,
+    returnTo,
+    app_base_url: env().APP_BASE_URL,
   });
 
   // Attach the state cookie directly to the redirect response — see the

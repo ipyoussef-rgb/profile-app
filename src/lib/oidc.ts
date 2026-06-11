@@ -14,10 +14,16 @@ export async function getOidcConfig(): Promise<client.Configuration> {
   return cached;
 }
 
+// Strip any trailing slash so we never emit `https://host//api/...`, which
+// would fail Keycloak's exact redirect-URI match.
+function baseUrl() {
+  return env().APP_BASE_URL.replace(/\/+$/, "");
+}
+
 export function redirectUri() {
-  return `${env().APP_BASE_URL}/api/auth/callback`;
+  return `${baseUrl()}/api/auth/callback`;
 }
 
 export function postLogoutRedirectUri() {
-  return `${env().APP_BASE_URL}/`;
+  return `${baseUrl()}/`;
 }

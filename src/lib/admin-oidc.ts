@@ -17,10 +17,14 @@ export async function getAdminOidcConfig(): Promise<client.Configuration> {
   return cached;
 }
 
+function baseUrl() {
+  return env().APP_BASE_URL.replace(/\/+$/, "");
+}
+
 export function adminRedirectUri() {
-  return `${env().APP_BASE_URL}/api/admin/auth/callback`;
+  return `${baseUrl()}/api/admin/auth/callback`;
 }
 
 export function adminPostLogoutRedirectUri() {
-  return `${env().APP_BASE_URL}/`;
+  return `${baseUrl()}/`;
 }
