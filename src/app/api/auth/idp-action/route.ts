@@ -55,6 +55,13 @@ export async function GET(req: NextRequest) {
     state: randomUUID(),
     code_challenge: challenge,
     code_challenge_method: "S256",
+    // Force a fresh authentication every time. Without this the first call
+    // works (fresh login) but later calls reuse the existing KOBIL SSO
+    // session, and the action's re-auth step against that stale session
+    // fails with "Invalid user credentials". prompt=login + max_age=0 make
+    // every attempt behave like the first.
+    prompt: "login",
+    max_age: "0",
   });
   if (user.email) params.set("login_hint", user.email);
 
