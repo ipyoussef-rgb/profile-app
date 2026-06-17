@@ -186,16 +186,16 @@ export function EditForm({
         </Card>
       </form>
 
-      {/* Email / phone / password — handled by KOBIL Identity via kc_action. */}
+      {/* Email / password — handled by KOBIL's dedicated headless clients. */}
       <Card>
         <CardTitle>{t.edit.securityTitle}</CardTitle>
         <CardDescription>{t.edit.idpHelper}</CardDescription>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <a href="/api/auth/login?kc_action=UPDATE_EMAIL&returnTo=%2Fprofile" className={actionLink}>
+          <a href="/api/auth/idp-action?action=email" className={actionLink}>
             {t.edit.changeEmail}
           </a>
-          <a href="/api/auth/login?kc_action=UPDATE_PASSWORD&returnTo=%2Fprofile" className={actionLink}>
+          <a href="/api/auth/idp-action?action=password" className={actionLink}>
             {t.edit.changePassword}
           </a>
         </div>
