@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes, createHash, randomUUID } from "node:crypto";
 import { requireUser, UnauthorizedError } from "@/lib/current-user";
+import { getKobilAccessToken } from "@/lib/session";
 import { env } from "@/lib/env";
 import { logEvent } from "@/lib/safe-log";
 
@@ -63,12 +64,20 @@ export async function GET(req: NextRequest) {
   });
   if (user.email) params.set("login_hint", user.email);
 
+  // Hand the user's KOBIL access token to the headless client's
+  // KobilCookieAuthenticator (reads key_name=Authorization). Passing a fresh
+  // token from the session is what lets repeat calls re-authenticate instead
+  // of failing with "Re-authentication is required".
+  const accessToken = await getKobilAccessToken();
+  if (accessToken) params.set("Authorization", accessToken);
+
   const url = `${authEndpoint}?${params.toString()}`;
   logEvent("info", "idp_action_start", {
     action: actionParam,
     client_id: cfg.clientId,
     kc_action: cfg.kcAction,
     redirect_uri: redirectUri,
+    has_token: Boolean(accessToken),
   });
   return NextResponse.redirect(url);
 }

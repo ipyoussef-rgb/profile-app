@@ -4,6 +4,7 @@ import { decodeJwt } from "jose";
 import { env } from "@/lib/env";
 import { getOidcConfig, redirectUri } from "@/lib/oidc";
 import {
+  KOBIL_AT_COOKIE,
   OIDC_STATE_COOKIE,
   SESSION_COOKIE,
   readOidcStateCookie,
@@ -140,6 +141,20 @@ export async function GET(req: NextRequest) {
     sameSite: "lax",
     path: "/",
     maxAge: USER_SESSION_TTL_SECONDS,
+  });
+  // Persist the KOBIL access token in its own httpOnly cookie so the headless
+  // change-email/password flow can hand it to KobilCookieAuthenticator. Lives
+  // as long as the token itself (falls back to the session TTL if unknown).
+  const atMaxAge =
+    typeof (tokens as { expires_in?: number }).expires_in === "number"
+      ? (tokens as { expires_in?: number }).expires_in!
+      : USER_SESSION_TTL_SECONDS;
+  response.cookies.set(KOBIL_AT_COOKIE, accessToken, {
+    httpOnly: true,
+    secure: env().APP_BASE_URL.startsWith("https://"),
+    sameSite: "lax",
+    path: "/",
+    maxAge: atMaxAge,
   });
   response.cookies.delete(OIDC_STATE_COOKIE);
   return response;

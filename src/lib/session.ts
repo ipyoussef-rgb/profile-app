@@ -4,6 +4,11 @@ import { env } from "./env";
 
 export const SESSION_COOKIE = "profile_session";
 export const OIDC_STATE_COOKIE = "profile_oidc_state";
+// KOBIL access token, kept in its own httpOnly cookie (NOT inside the session
+// JWT, to avoid bloating it past the 4KB cookie limit). Used to hand the
+// user's token to KOBIL's headless change-email/password clients, whose
+// KobilCookieAuthenticator reads it under key_name=Authorization.
+export const KOBIL_AT_COOKIE = "profile_kobil_at";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
 
@@ -57,6 +62,7 @@ export async function setSessionCookie(token: string) {
 export async function clearSessionCookie() {
   const c = await cookies();
   c.delete(SESSION_COOKIE);
+  c.delete(KOBIL_AT_COOKIE);
 }
 
 export async function setOidcStateCookie(value: string) {
@@ -78,4 +84,9 @@ export async function readOidcStateCookie(): Promise<string | undefined> {
 export async function clearOidcStateCookie() {
   const c = await cookies();
   c.delete(OIDC_STATE_COOKIE);
+}
+
+export async function getKobilAccessToken(): Promise<string | undefined> {
+  const c = await cookies();
+  return c.get(KOBIL_AT_COOKIE)?.value;
 }
