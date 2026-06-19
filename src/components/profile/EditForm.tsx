@@ -191,28 +191,10 @@ export function EditForm({
         <CardTitle>{t.edit.securityTitle}</CardTitle>
         <CardDescription>{t.edit.idpHelper}</CardDescription>
 
-        {/* Change email needs the NEW address up front: the headless
-            KobilChangeEmailAuthenticator reads it from its `userIdentity`
-            input, which we pass as ?email=. A plain GET form keeps this a
-            top-level navigation so the session cookie rides along. */}
-        <form action="/api/auth/idp-action" method="get" className="flex flex-col gap-2 sm:flex-row">
-          <input type="hidden" name="action" value="email" />
-          <input
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            inputMode="email"
-            placeholder={t.fields.email}
-            aria-label={t.edit.changeEmail}
-            className={`${inputClass} flex-1`}
-          />
-          <button type="submit" className={`${actionLink} sm:w-auto sm:px-6`}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <a href="/api/auth/idp-action?action=email" className={actionLink}>
             {t.edit.changeEmail}
-          </button>
-        </form>
-
-        <div className="mt-3">
+          </a>
           <a href="/api/auth/idp-action?action=password" className={actionLink}>
             {t.edit.changePassword}
           </a>
