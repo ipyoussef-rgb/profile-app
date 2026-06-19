@@ -2,9 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import * as client from "openid-client";
 import { env } from "@/lib/env";
 import { getAdminOidcConfig, adminPostLogoutRedirectUri } from "@/lib/admin-oidc";
-import { clearAdminSessionCookie, getAdminSession } from "@/lib/admin-session";
+import {
+  ADMIN_SESSION_COOKIE,
+  ADMIN_OIDC_STATE_COOKIE,
+  getAdminSession,
+} from "@/lib/admin-session";
 
 export const dynamic = "force-dynamic";
+
+// Expire the admin cookies ON the redirect response — next/headers
+// cookies().delete() does not reliably ship Set-Cookie alongside a fresh
+// NextResponse.redirect() in Next.js 15, so clearAdminSessionCookie() left the
+// admin session in place. Clear on the response itself.
+function redirectClearingCookies(url: URL): NextResponse {
+  const secure = env().APP_BASE_URL.startsWith("https://");
+  const res = NextResponse.redirect(url);
+  for (const name of [ADMIN_SESSION_COOKIE, ADMIN_OIDC_STATE_COOKIE]) {
+    res.cookies.set(name, "", {
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+  }
+  return res;
+}
 
 export async function GET(req: NextRequest) {
   // Next.js may prefetch the "Sign out" <Link> when it scrolls into view or
@@ -16,10 +39,10 @@ export async function GET(req: NextRequest) {
   }
 
   const session = await getAdminSession();
-  await clearAdminSessionCookie();
+  const home = new URL("/", env().APP_BASE_URL);
 
   if (!session) {
-    return NextResponse.redirect(new URL("/", env().APP_BASE_URL));
+    return redirectClearingCookies(home);
   }
 
   try {
@@ -27,8 +50,8 @@ export async function GET(req: NextRequest) {
     const endSession = client.buildEndSessionUrl(config, {
       post_logout_redirect_uri: adminPostLogoutRedirectUri(),
     });
-    return NextResponse.redirect(endSession);
+    return redirectClearingCookies(endSession);
   } catch {
-    return NextResponse.redirect(new URL("/", env().APP_BASE_URL));
+    return redirectClearingCookies(home);
   }
 }
