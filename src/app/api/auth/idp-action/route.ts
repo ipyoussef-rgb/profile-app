@@ -15,6 +15,16 @@ const ACTIONS = {
   password: { clientId: "IDPChangePasswordHeadlessV2", kcAction: "UPDATE_PASSWORD" },
 } as const;
 
+// The Valid Redirect URI registered on both headless clients
+// (IDPChangeEmailHeadlessV2 / IDPChangePasswordHeadlessV2). This is the KOBIL
+// Super-App sentinel: it never loads in a browser — the native WebView shell
+// intercepts the navigation to `https://kobil/...` and ends the flow. It MUST
+// match the client's registered redirect URI exactly or Keycloak rejects the
+// request with invalid_redirect_uri. We never exchange the code (the required
+// action's side effect is the whole point), so the URL only has to validate,
+// not resolve. Hardcoded — fixed per the KOBIL tenant, like the client IDs.
+const KOBIL_HEADLESS_REDIRECT_URI = "https://kobil/OpenIdRedirectUri";
+
 type ActionKey = keyof typeof ACTIONS;
 
 export async function GET(req: NextRequest) {
@@ -35,10 +45,10 @@ export async function GET(req: NextRequest) {
     return new NextResponse("unknown action (expected ?action=email|password)", { status: 400 });
   }
 
-  const base = env().APP_BASE_URL.replace(/\/+$/, "");
-  // Landing page after the action. Must be a Valid Redirect URI on the
-  // headless client. No query string → exact-match friendly in Keycloak.
-  const redirectUri = `${base}/profile`;
+  // Must be the Valid Redirect URI registered on the headless client (the
+  // KOBIL Super-App sentinel), not the app's own URL — Keycloak exact-matches
+  // it. No query string → exact-match friendly.
+  const redirectUri = KOBIL_HEADLESS_REDIRECT_URI;
   const authEndpoint = `${env().KOBIL_IDP_ISSUER.replace(/\/+$/, "")}/protocol/openid-connect/auth`;
 
   // These clients may require PKCE. We never exchange the resulting code (the
