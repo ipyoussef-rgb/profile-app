@@ -27,3 +27,14 @@ export function redirectUri() {
 export function postLogoutRedirectUri() {
   return `${baseUrl()}/`;
 }
+
+// Exchange a (long-lived, offline_access) refresh token for a fresh access
+// token using the confidential miniapp client. The headless change-email /
+// change-password flow needs a CURRENTLY-VALID user token to hand to KOBIL's
+// KobilCookieAuthenticator — a stale one makes it demand re-authentication and
+// fail with invalid_user_credentials. Keycloak rotates refresh tokens, so the
+// caller must persist the returned refresh_token if present.
+export async function refreshAccessToken(refreshToken: string) {
+  const config = await getOidcConfig();
+  return client.refreshTokenGrant(config, refreshToken);
+}

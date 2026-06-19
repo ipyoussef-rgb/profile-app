@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes, createHash, randomUUID } from "node:crypto";
 import { requireUser, UnauthorizedError } from "@/lib/current-user";
-import { getKobilAccessToken } from "@/lib/session";
+import {
+  KOBIL_AT_COOKIE,
+  KOBIL_RT_COOKIE,
+  getKobilAccessToken,
+  getKobilRefreshToken,
+} from "@/lib/session";
+import { refreshAccessToken } from "@/lib/oidc";
 import { env } from "@/lib/env";
 import { logEvent } from "@/lib/safe-log";
 
@@ -74,11 +80,37 @@ export async function GET(req: NextRequest) {
   });
   if (user.email) params.set("login_hint", user.email);
 
-  // Hand the user's KOBIL access token to the headless client's
-  // KobilCookieAuthenticator (reads key_name=Authorization). Passing a fresh
-  // token from the session is what lets repeat calls re-authenticate instead
-  // of failing with "Re-authentication is required".
-  const accessToken = await getKobilAccessToken();
+  // The headless client's KobilCookieAuthenticator (reads key_name=Authorization)
+  // needs a CURRENTLY-VALID user token. The access-token cookie expires within
+  // minutes, so prefer minting a fresh token from the refresh token
+  // (offline_access); a stale token makes the authenticator demand re-auth and
+  // fail with invalid_user_credentials. Fall back to the cached access token.
+  let accessToken = await getKobilAccessToken();
+  let tokenSource: "refresh" | "cookie" | "none" = accessToken ? "cookie" : "none";
+  let rotatedRefreshToken: string | undefined;
+  let freshAtMaxAge: number | undefined;
+  let didRefresh = false;
+
+  const refreshToken = await getKobilRefreshToken();
+  if (refreshToken) {
+    try {
+      const tokens = await refreshAccessToken(refreshToken);
+      if (tokens.access_token) {
+        accessToken = tokens.access_token;
+        tokenSource = "refresh";
+        didRefresh = true;
+        // Keycloak rotates refresh tokens; capture the new one to persist.
+        rotatedRefreshToken = (tokens as { refresh_token?: string }).refresh_token;
+        freshAtMaxAge = typeof tokens.expires_in === "number" ? tokens.expires_in : undefined;
+      }
+    } catch (e) {
+      logEvent("warn", "idp_action_refresh_failed", {
+        action: actionParam,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
   if (accessToken) params.set("Authorization", accessToken);
 
   const url = `${authEndpoint}?${params.toString()}`;
@@ -88,6 +120,30 @@ export async function GET(req: NextRequest) {
     kc_action: cfg.kcAction,
     redirect_uri: redirectUri,
     has_token: Boolean(accessToken),
+    token_source: tokenSource,
   });
-  return NextResponse.redirect(url);
+
+  const response = NextResponse.redirect(url);
+  // Persist the rotated tokens on the redirect so a follow-up action can
+  // refresh again (the consumed refresh token is invalidated by Keycloak).
+  const secure = env().APP_BASE_URL.startsWith("https://");
+  if (didRefresh) {
+    response.cookies.set(KOBIL_AT_COOKIE, accessToken!, {
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: freshAtMaxAge,
+    });
+    if (rotatedRefreshToken) {
+      response.cookies.set(KOBIL_RT_COOKIE, rotatedRefreshToken, {
+        httpOnly: true,
+        secure,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 8, // align with the 8h session lifetime
+      });
+    }
+  }
+  return response;
 }

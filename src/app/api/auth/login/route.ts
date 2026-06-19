@@ -46,7 +46,11 @@ export async function GET(req: NextRequest) {
 
   const authParams: Record<string, string> = {
     redirect_uri: redirectUri(),
-    scope: "openid profile email",
+    // offline_access yields a long-lived refresh token. The headless
+    // change-email/password flow exchanges it for a fresh access token at
+    // action time (the short-lived access token is otherwise gone by then,
+    // and KobilCookieAuthenticator rejects stale credentials).
+    scope: "openid profile email offline_access",
     code_challenge: codeChallenge,
     code_challenge_method: "S256",
     state,

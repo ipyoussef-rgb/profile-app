@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { getOidcConfig, redirectUri } from "@/lib/oidc";
 import {
   KOBIL_AT_COOKIE,
+  KOBIL_RT_COOKIE,
   OIDC_STATE_COOKIE,
   SESSION_COOKIE,
   readOidcStateCookie,
@@ -156,6 +157,20 @@ export async function GET(req: NextRequest) {
     path: "/",
     maxAge: atMaxAge,
   });
+  // Persist the refresh token (from offline_access) for the whole session
+  // lifetime. The headless change-email/password flow refreshes it on demand
+  // to obtain a currently-valid access token, since the AT cookie above
+  // expires within minutes.
+  const refreshToken = (tokens as { refresh_token?: string }).refresh_token;
+  if (refreshToken) {
+    response.cookies.set(KOBIL_RT_COOKIE, refreshToken, {
+      httpOnly: true,
+      secure: env().APP_BASE_URL.startsWith("https://"),
+      sameSite: "lax",
+      path: "/",
+      maxAge: USER_SESSION_TTL_SECONDS,
+    });
+  }
   response.cookies.delete(OIDC_STATE_COOKIE);
   return response;
 }

@@ -9,6 +9,13 @@ export const OIDC_STATE_COOKIE = "profile_oidc_state";
 // user's token to KOBIL's headless change-email/password clients, whose
 // KobilCookieAuthenticator reads it under key_name=Authorization.
 export const KOBIL_AT_COOKIE = "profile_kobil_at";
+// KOBIL refresh token (issued when login requests the offline_access scope).
+// Long-lived, httpOnly. The headless change-email/password flow exchanges it
+// for a FRESH access token at action time, because the access token cookie
+// expires within minutes (its own short TTL) while the session lives for
+// hours — without this, the token is gone by the time the user acts and
+// KobilCookieAuthenticator rejects the stale credentials.
+export const KOBIL_RT_COOKIE = "profile_kobil_rt";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
 
@@ -63,6 +70,7 @@ export async function clearSessionCookie() {
   const c = await cookies();
   c.delete(SESSION_COOKIE);
   c.delete(KOBIL_AT_COOKIE);
+  c.delete(KOBIL_RT_COOKIE);
 }
 
 export async function setOidcStateCookie(value: string) {
@@ -89,4 +97,9 @@ export async function clearOidcStateCookie() {
 export async function getKobilAccessToken(): Promise<string | undefined> {
   const c = await cookies();
   return c.get(KOBIL_AT_COOKIE)?.value;
+}
+
+export async function getKobilRefreshToken(): Promise<string | undefined> {
+  const c = await cookies();
+  return c.get(KOBIL_RT_COOKIE)?.value;
 }
