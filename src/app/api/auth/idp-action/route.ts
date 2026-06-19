@@ -51,6 +51,20 @@ export async function GET(req: NextRequest) {
     return new NextResponse("unknown action (expected ?action=email|password)", { status: 400 });
   }
 
+  // KobilChangeEmailAuthenticator reads the NEW address from its `userIdentity`
+  // form input. This is a redirect-driven flow (no native AST form renderer),
+  // so we must supply it up front as a request param — otherwise the
+  // authenticator validates the literal string "null" and rejects it with
+  // "Invalid format of email". Our UI collects it as ?email=.
+  let newEmail: string | null = null;
+  if (actionParam === "email") {
+    newEmail = req.nextUrl.searchParams.get("email")?.trim() || null;
+    if (!newEmail) {
+      const base = env().APP_BASE_URL.replace(/\/+$/, "");
+      return NextResponse.redirect(`${base}/profile/edit?error=email_required`);
+    }
+  }
+
   // Must be the Valid Redirect URI registered on the headless client (the
   // KOBIL Super-App sentinel), not the app's own URL — Keycloak exact-matches
   // it. No query string → exact-match friendly.
@@ -79,6 +93,8 @@ export async function GET(req: NextRequest) {
     // on every call. Let the cookie authenticator run silently.
   });
   if (user.email) params.set("login_hint", user.email);
+  // The new email for KobilChangeEmailAuthenticator's userIdentity input.
+  if (newEmail) params.set("userIdentity", newEmail);
 
   // The headless client's KobilCookieAuthenticator (reads key_name=Authorization)
   // needs a CURRENTLY-VALID user token. The access-token cookie expires within
@@ -121,6 +137,7 @@ export async function GET(req: NextRequest) {
     redirect_uri: redirectUri,
     has_token: Boolean(accessToken),
     token_source: tokenSource,
+    has_new_email: Boolean(newEmail),
   });
 
   const response = NextResponse.redirect(url);
