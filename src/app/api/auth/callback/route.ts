@@ -102,6 +102,17 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // Decisive diagnostic: did the IdP actually return a refresh token for the
+  // offline_access scope? If has_refresh_token is false here, the miniapp
+  // client isn't granting offline_access and the headless flow can never mint
+  // a fresh token. token_scope echoes what the IdP actually issued.
+  logEvent("info", "oidc_tokens_received", {
+    has_access_token: Boolean(tokens.access_token),
+    has_refresh_token: Boolean((tokens as { refresh_token?: string }).refresh_token),
+    token_scope: (tokens as { scope?: string }).scope ?? null,
+    expires_in: (tokens as { expires_in?: number }).expires_in ?? null,
+  });
+
   const claims = tokens.claims();
   if (!claims) {
     return failOidc("tokens_missing_claims");

@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
     authorization_endpoint: authUrl.origin + authUrl.pathname,
     client_id: env().KOBIL_MINIAPP_CLIENT_ID,
     kc_action: kc_action ?? null,
+    scope: authParams.scope,
     returnTo,
     app_base_url: env().APP_BASE_URL,
   });
