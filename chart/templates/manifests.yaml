@@ -1,0 +1,19 @@
+---
+{{ include "ks.chart.template.common.deployment.v1" . }}
+---
+{{ include "ks.chart.template.common.service.v1" . }}
+---
+{{ include "ks.chart.template.common.serviceAccount.v1" . }}
+---
+{{ include "ks.chart.template.common.ingress.v1" . }}
+---
+{{ include "ks.chart.template.common.istio.virtualservice.v1" . }}
+---
+{{ include "ks.chart.template.common.hpa.v1" . }}
+---
+{{ include "ks.chart.template.common.pdb.v1" . }}
+---
+{{ include "ks.chart.template.common.tests.connection.v2" . }}
+---
+{{ include "ks.chart.template.common.serviceMonitor.v1" . }}
+---

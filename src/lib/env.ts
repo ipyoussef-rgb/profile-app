@@ -24,8 +24,27 @@ const schema = z.object({
 
 let cached: z.infer<typeof schema> | null = null;
 
+// KOBIL deploys this app via a generic ks-chart-template-common Helm chart
+// whose envFromConfigmap/Secret uses OIDC_* names. Map those aliases onto our
+// KOBIL_* names before validation so the same code runs on Vercel (KOBIL_*)
+// and in the KOBIL cluster (OIDC_*) without duplicating config.
+const KOBIL_ALIASES: Record<string, string> = {
+  KOBIL_IDP_ISSUER: "OIDC_DISCOVERY_URL",
+  KOBIL_MINIAPP_CLIENT_ID: "OIDC_CLIENT_ID",
+  KOBIL_MINIAPP_CLIENT_SECRET: "OIDC_CLIENT_SECRET",
+};
+
+function applyKobilAliases() {
+  for (const [primary, alias] of Object.entries(KOBIL_ALIASES)) {
+    if (!process.env[primary] && process.env[alias]) {
+      process.env[primary] = process.env[alias];
+    }
+  }
+}
+
 export function env() {
   if (cached) return cached;
+  applyKobilAliases();
   const parsed = schema.safeParse(process.env);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
