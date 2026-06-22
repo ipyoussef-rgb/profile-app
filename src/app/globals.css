@@ -1,30 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  /* KOBIL brand tokens (placeholders — swap with real KOBIL assets). */
-  --color-kobil-primary: #003a70;
-  --color-kobil-primary-hover: #002e58;
-  --color-kobil-primary-tint: #e6efff;
+  /* KOBIL brand tokens (Brand Guideline 2026). */
+  --color-kobil-primary: #2e4fff;        /* KOBIL Blue */
+  --color-kobil-primary-hover: #1f3ce0;
+  --color-kobil-primary-tint: #e8ecff;   /* soft brand-blue tint */
   --color-kobil-secondary: #00a3e0;
+  --color-kobil-navy: #0d1b3e;           /* headings / body anchor */
+  --color-kobil-ghost: #e8ecff;          /* soft brand-blue tint */
   --color-kobil-surface: #ffffff;
-  --color-kobil-surface-muted: #f4f6fa;
-  --color-kobil-text: #0e1726;
-  --color-kobil-text-muted: #475569;
-  --color-kobil-border: #d8dee9;
+  --color-kobil-surface-muted: #f4f6fb;
+  --color-kobil-text: #0d1b3e;
+  --color-kobil-text-muted: #5b6478;
+  --color-kobil-border: #e1e5ef;
   --color-kobil-danger: #b91c1c;
   --color-kobil-danger-tint: #fdecec;
   --color-kobil-success: #047857;
   --color-kobil-success-tint: #e3f5ee;
   --color-kobil-warning: #92600a;
   --color-kobil-warning-tint: #fdf3da;
-  --color-kobil-ring: rgba(0, 58, 112, 0.28);
+  --color-kobil-ring: rgba(46, 79, 255, 0.32);
 
   --font-kobil: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --radius-kobil: 14px;
-  --radius-kobil-sm: 10px;
+  --radius-kobil: 16px;
+  --radius-kobil-sm: 12px;
 
-  --shadow-kobil-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
-  --shadow-kobil-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-kobil-sm: 0 1px 2px rgba(13, 27, 62, 0.05), 0 1px 1px rgba(13, 27, 62, 0.04);
+  --shadow-kobil-md: 0 6px 18px rgba(13, 27, 62, 0.08), 0 2px 6px rgba(13, 27, 62, 0.05);
 
   /* Minimum comfortable touch target for a mobile mini-app (Apple HIG 44px,
      Material 48px). Use as min-height on interactive controls. */
@@ -41,8 +43,8 @@ html {
 
 html, body {
   background:
-    radial-gradient(1200px 600px at 0% -10%, rgba(0, 163, 224, 0.08), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(0, 58, 112, 0.06), transparent 60%),
+    radial-gradient(1200px 600px at 0% -10%, rgba(46, 79, 255, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(13, 27, 62, 0.05), transparent 60%),
     var(--color-kobil-surface-muted);
   background-attachment: fixed;
   color: var(--color-kobil-text);
