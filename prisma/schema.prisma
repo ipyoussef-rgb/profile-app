@@ -26,7 +26,6 @@ model Profile {
   user_id                  String    @id @db.Uuid
   display_name             String?   @db.VarChar(80)
   avatar_url               String?
-  postfach_email           String?   @db.VarChar(255)
   profile_visibility       String    @default("private") // private | miniapps | public
   notification_preferences Json?     @map("notification_preferences_json")
   privacy_settings         Json?     @map("privacy_settings_json")
@@ -147,20 +146,4 @@ model AdminAuditLog {
   @@index([admin_subject, created_at])
   @@index([target_user_id, created_at])
   @@map("admin_audit_logs")
-}
-
-model EidVerification {
-  user_id        String   @id @db.Uuid
-  verified_at    DateTime @default(now())
-  transaction_id String?
-  given_names    String?
-  family_names   String?
-  date_of_birth  String?
-  place_of_birth String?
-  street         String?
-  city           String?
-  zip_code       String?
-  country        String?
-
-  @@map("eid_verifications")
 }

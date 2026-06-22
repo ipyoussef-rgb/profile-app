@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { env } from "@/lib/env";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
-import { Header } from "@/components/layout/Header";
 
 export const dynamic = "force-dynamic";
 
 export default function AccessDeniedPage() {
   return (
     <div className="min-h-screen bg-[var(--color-kobil-surface-muted)]">
-      <Header />
       <main className="mx-auto max-w-3xl px-4 py-6">
         <Card>
           <CardTitle>Access denied</CardTitle>
