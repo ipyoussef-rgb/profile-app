@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
   }
 
   const config = await getAdminOidcConfig();
-  const currentUrl = new URL(req.url);
+  const currentUrl = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, env().APP_BASE_URL);
 
   let tokens: Awaited<ReturnType<typeof client.authorizationCodeGrant>>;
   try {

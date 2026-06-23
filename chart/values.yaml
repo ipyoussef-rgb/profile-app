@@ -87,29 +87,30 @@ component: webapp
 # -- Number of desired pods for this deployment.
 replicaCount: 1
 
-# -- OIDC configuration. The discovery URL, client ID, and redirect
-# URI are public; only `clientSecret` is sensitive and lands in the
-# chart's `envFromSecret` block. Env-var names follow the OIDC RFC
-# (vendor-neutral) so any IDP - KOBIL Identity in deployed
-# environments, Keycloak / Auth0 / Okta elsewhere - drops in without
-# code changes. Per-environment Helm overlays set the real values.
+# -- App URLs / secrets. The app builds EVERY OIDC redirect & callback
+# URL from APP_BASE_URL (never from the request host), so it keeps
+# working behind an ingress. Leave `baseUrl` empty to derive it from the
+# public routing host below (`https://<subdomain>.<domain>`); set it only
+# to pin a different public URL. `authSecret` signs the session cookie
+# (>= 32 chars) and lands in the chart's Secret.
+# Generate: openssl rand -base64 48
+app:
+  baseUrl: ""
+  authSecret: ""
+
+# -- OIDC configuration. The discovery URL and client ID are public;
+# only `clientSecret` is sensitive and lands in the chart's `envFromSecret`
+# block. The redirect URI is DERIVED from the app base URL by default
+# (`<baseUrl>/api/auth/callback`) so it can never drift from the value the
+# app sends at the code->token exchange - register exactly that one URL in
+# the IDP. Env-var names follow the OIDC RFC (vendor-neutral) so any IDP -
+# KOBIL Identity, Keycloak / Auth0 / Okta - drops in without code changes.
 oidc:
   discoveryUrl: ""
   clientId: ""
   clientSecret: ""
+  # Optional override; empty = derive from app.baseUrl / the routing host.
   redirectUri: ""
-
-# -- App-specific config not covered by the OIDC/DB blocks. Required for the
-# profile-app to boot.
-app:
-  # -- APP_BASE_URL — fully-qualified public URL, no trailing slash. Used by
-  # every OIDC redirect-URI builder; must match the istio host + scheme.
-  baseUrl: ""
-
-auth:
-  # -- AUTH_SECRET — jose HS256 key signing the session cookie. Min 32 chars.
-  # Generate with: openssl rand -base64 48
-  secret: ""
 
 # -- Postgres connection pieces. Split into discrete fields so the
 # secret-bearing piece (`password`) lands in a Kubernetes Secret while
@@ -187,12 +188,16 @@ mainContainer:
       memory: 384Mi
 
   # -- Environment variables to be mapped via configmap.
-  # Defined as `key: value` pairs.
+  # Defined as `key: value` pairs. Helm `tpl` resolves the expressions.
   envFromConfigmap:
+    # Public base URL the app builds all OIDC URLs from. Defaults to the
+    # routing host so it always matches the ingress; override via app.baseUrl.
+    APP_BASE_URL: '{{ .Values.app.baseUrl | default (printf "https://%s.%s" .Values.routing.subdomain .Values.global.routing.domain) }}'
     OIDC_DISCOVERY_URL: "{{ .Values.oidc.discoveryUrl }}"
     OIDC_CLIENT_ID: "{{ .Values.oidc.clientId }}"
-    OIDC_REDIRECT_URI: "{{ .Values.oidc.redirectUri }}"
-    APP_BASE_URL: "{{ .Values.app.baseUrl }}"
+    # Derived from APP_BASE_URL unless oidc.redirectUri is set, so the
+    # registered redirect URI and the one the app sends can never diverge.
+    OIDC_REDIRECT_URI: '{{ .Values.oidc.redirectUri | default (printf "%s/api/auth/callback" (.Values.app.baseUrl | default (printf "https://%s.%s" .Values.routing.subdomain .Values.global.routing.domain))) }}'
     PGHOST: "{{ .Values.database.host }}"
     PGPORT: "{{ .Values.database.port }}"
     PGUSER: "{{ .Values.database.user }}"
@@ -202,8 +207,8 @@ mainContainer:
   # -- Environment variables to be mapped via secret.
   # Defined as `key: value` pairs.
   envFromSecret:
+    AUTH_SECRET: "{{ .Values.app.authSecret }}"
     OIDC_CLIENT_SECRET: "{{ .Values.oidc.clientSecret }}"
-    AUTH_SECRET: "{{ .Values.auth.secret }}"
     PGPASSWORD: "{{ .Values.database.password }}"
 
   # -- SecurityContext defining the security options the container should be run with
@@ -240,29 +245,11 @@ routing:
       inject: true
 
     # -- Definition of the hosts and paths to be added to istio virtual service.
-    # Tiers are additive in ks-chart-template-common: admin inherits public, so
-    # the admin gateway reaches every prefix automatically. Each route is mapped
-    # to the LEAST-privileged gateway that needs it — no `prefix: /` catch-all
-    # (which would attach /admin + /api/admin to the internet-facing public
-    # gateway). Root is an `exact` match so it routes only the menu landing.
-    # /api/health + /api/metrics have no entry: kubelet and the ServiceMonitor
-    # reach the pod via the k8s Service, bypassing Istio.
     hosts:
       - host: "{{ .Values.routing.subdomain }}.{{ .Values.global.routing.domain }}"
         paths:
-          # public gateway (internet): the menu landing + profile UI + its API
           public:
-            - exact: /
-            - prefix: /profile
-            - prefix: /access-denied
-            - prefix: /_next
-            - prefix: /favicon.ico
-            - prefix: /api/auth
-            - prefix: /api/me
-          # admin gateway (internal network only): admin UI + admin API
-          admin:
-            - prefix: /admin
-            - prefix: /api/admin
+            - prefix: /
 
   ingress:
     # -- Enable/disable creation and ingress resource.
@@ -272,24 +259,11 @@ routing:
     # -- Optional annotations to add to the ingress resource
     annotations: {}
 
-    # A plain Ingress has no public/admin tier concept (single entry point), so
-    # mirror the security intent by routing only the non-admin paths. /admin +
-    # /api/admin are intentionally absent so they never get an internet route.
     hosts:
       - host: "{{ .Values.routing.subdomain }}.{{ .Values.global.routing.domain }}"
         paths:
-          - path: /profile
-            pathType: Prefix
-          - path: /access-denied
-            pathType: Prefix
-          - path: /_next
-            pathType: Prefix
-          - path: /favicon.ico
-            pathType: Prefix
-          - path: /api/auth
-            pathType: Prefix
-          - path: /api/me
-            pathType: Prefix
+          - path: /
+            pathType: ImplementationSpecific
 
 # -- Declaration of the horizontal pod autoscaler
 # (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).

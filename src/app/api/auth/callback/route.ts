@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
   // openid-client v6 does `instanceof URL` on currentUrl. Next.js's
   // `req.nextUrl` is a NextURL subclass and fails the check across realms;
   // a fresh stdlib URL works.
-  const currentUrl = new URL(req.url);
+  const currentUrl = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, env().APP_BASE_URL);
 
   let tokens: Awaited<ReturnType<typeof client.authorizationCodeGrant>>;
   try {

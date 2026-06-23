@@ -25,12 +25,6 @@ if [ -z "${DATABASE_URL:-}" ]; then
     export DATABASE_URL="postgresql://${PGUSER_ENC}:${PGPASSWORD_ENC}@${PGHOST}:${PGPORT}/${PGDATABASE}?schema=${PGSCHEMA}"
 fi
 
-# prisma/schema.prisma reads PROFILE_DATABASE_URL (+ _UNPOOLED for migrations)
-# — the Vercel-Neon naming convention. Cluster Postgres has no pgbouncer
-# distinction, so mirror DATABASE_URL into both slots when they're unset.
-export PROFILE_DATABASE_URL="${PROFILE_DATABASE_URL:-${DATABASE_URL}}"
-export PROFILE_DATABASE_URL_UNPOOLED="${PROFILE_DATABASE_URL_UNPOOLED:-${DATABASE_URL}}"
-
 # libpq has no native PGSCHEMA: psql, pg_dump, pg_isready etc. read
 # PGOPTIONS instead. Derive it from PGSCHEMA so any client tool
 # launched inside this container picks up the right search path

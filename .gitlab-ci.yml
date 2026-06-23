@@ -39,6 +39,22 @@ Project:Smoke Test:
   variables:
     TEST_SCRIPT: 'pipeline/smoke_test.sh'
 
+# Guards against the OIDC redirect_uri mismatch that breaks login behind an
+# ingress: fails if an OIDC token exchange / logout builds its URL from the
+# request host (req.url / Host header) instead of APP_BASE_URL. No-ops for apps
+# without OIDC. See pipeline/check_oidc_urls.sh.
+Project:OIDC URL Guard:
+  stage: check
+  image: gitlab.kobil.com:4567/development/devops/dd-container:${DD_CONTAINER_IMAGE_TAG}
+  tags:
+    - lightweight
+  extends:
+    - .retry-without-script-failure
+  script:
+    - sh pipeline/check_oidc_urls.sh
+  needs:
+    - job: 'Common:Init'
+
 # Guards against Chart.yaml CHANGELOG.md drift: the top version entry
 # in CHANGELOG.md must match the appVersion that ci-library derives from
 # Chart.yaml. Ported from mpower-vault-be / mpower-sign-request-be.

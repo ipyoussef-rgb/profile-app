@@ -30,15 +30,13 @@ WORKDIR /usr/src/app
 
 # Cache the npm package store across builds. BuildKit reuses it when
 # package-lock.json hasn't changed, cutting rebuild time noticeably.
-# --ignore-scripts skips the `postinstall: prisma generate` hook here: the
-# schema isn't copied until the next layer, and `npm run build` below runs
-# `prisma generate` explicitly once it is present.
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm,uid=0 npm ci --ignore-scripts
+RUN --mount=type=cache,target=/root/.npm,uid=0 npm ci
 
 # Prisma generate runs against a dummy URL: it only needs the schema
 # to emit the typed client. The real DATABASE_URL arrives at runtime.
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 
 COPY . .
@@ -91,6 +89,7 @@ COPY --from=builder   --chown=1001:0 /usr/src/app/.next/standalone        ./
 COPY --from=builder   --chown=1001:0 /usr/src/app/.next/static            ./.next/static
 COPY --from=builder   --chown=1001:0 /usr/src/app/public                  ./public
 COPY --from=builder   --chown=1001:0 /usr/src/app/prisma                  ./prisma
+COPY --from=builder   --chown=1001:0 /usr/src/app/prisma.config.ts        ./
 COPY --chown=1001:0 docker-entrypoint.sh ./
 
 EXPOSE 3000
