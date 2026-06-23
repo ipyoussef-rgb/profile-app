@@ -245,11 +245,29 @@ routing:
       inject: true
 
     # -- Definition of the hosts and paths to be added to istio virtual service.
+    # Tiers are additive in ks-chart-template-common: admin inherits public, so
+    # the admin gateway reaches every prefix automatically. Each route is mapped
+    # to the LEAST-privileged gateway that needs it — no `prefix: /` catch-all
+    # (which would attach /admin + /api/admin to the internet-facing public
+    # gateway). Root is an `exact` match so it routes only the menu landing.
+    # /api/health + /api/metrics have no entry: kubelet and the ServiceMonitor
+    # reach the pod via the k8s Service, bypassing Istio.
     hosts:
       - host: "{{ .Values.routing.subdomain }}.{{ .Values.global.routing.domain }}"
         paths:
+          # public gateway (internet): the menu landing + profile UI + its API
           public:
-            - prefix: /
+            - exact: /
+            - prefix: /profile
+            - prefix: /access-denied
+            - prefix: /_next
+            - prefix: /favicon.ico
+            - prefix: /api/auth
+            - prefix: /api/me
+          # admin gateway (internal network only): admin UI + admin API
+          admin:
+            - prefix: /admin
+            - prefix: /api/admin
 
   ingress:
     # -- Enable/disable creation and ingress resource.
@@ -259,11 +277,24 @@ routing:
     # -- Optional annotations to add to the ingress resource
     annotations: {}
 
+    # A plain Ingress has no public/admin tier concept (single entry point), so
+    # mirror the security intent by routing only the non-admin paths. /admin +
+    # /api/admin are intentionally absent so they never get an internet route.
     hosts:
       - host: "{{ .Values.routing.subdomain }}.{{ .Values.global.routing.domain }}"
         paths:
-          - path: /
-            pathType: ImplementationSpecific
+          - path: /profile
+            pathType: Prefix
+          - path: /access-denied
+            pathType: Prefix
+          - path: /_next
+            pathType: Prefix
+          - path: /favicon.ico
+            pathType: Prefix
+          - path: /api/auth
+            pathType: Prefix
+          - path: /api/me
+            pathType: Prefix
 
 # -- Declaration of the horizontal pod autoscaler
 # (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
