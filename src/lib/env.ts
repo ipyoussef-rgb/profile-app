@@ -20,6 +20,12 @@ const schema = z.object({
     .union([z.literal("1"), z.literal("")])
     .optional()
     .transform((v) => v === "1"),
+  // Brand colours, overridable from the Helm chart's `theme.*` values without a
+  // rebuild. Empty/unset → the app's built-in defaults in globals.css. Injected
+  // as CSS custom properties by the root layout (validated as CSS colours there).
+  THEME_HEADER_COLOR: z.string().optional(),
+  THEME_PRIMARY_COLOR: z.string().optional(),
+  THEME_NAVY_COLOR: z.string().optional(),
 });
 
 let cached: z.infer<typeof schema> | null = null;

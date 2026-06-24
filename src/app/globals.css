@@ -7,6 +7,7 @@
   --color-kobil-primary-tint: #e8ecff;   /* soft brand-blue tint */
   --color-kobil-secondary: #00a3e0;
   --color-kobil-navy: #0d1b3e;           /* headings / body anchor */
+  --color-kobil-header: #1b3a87;         /* profile header band (themeable via THEME_HEADER_COLOR) */
   --color-kobil-ghost: #e8ecff;          /* soft brand-blue tint */
   --color-kobil-surface: #ffffff;
   --color-kobil-surface-muted: #f4f6fb;

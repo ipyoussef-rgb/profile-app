@@ -135,6 +135,18 @@ kobil:
   # (KOBIL_IDP_USERS_API; default <discoveryUrl>/v3_user).
   idpUsersApi: ""
 
+# -- Brand colours, overridable per environment without an app rebuild. Empty
+# => the app's built-in defaults. Set a CSS colour (e.g. "#1b3a87"); the app
+# injects them as CSS custom properties at runtime (values are validated as
+# colours app-side).
+theme:
+  # Navy band behind the PROFIL header / avatar.
+  headerColor: ""
+  # Accent colour (edit pencil, links, focus).
+  primaryColor: ""
+  # Headings / primary text colour.
+  navyColor: ""
+
 # -- Postgres connection pieces. Split into discrete fields so the
 # secret-bearing piece (`password`) lands in a Kubernetes Secret while
 # the rest stays in a ConfigMap. The pod env follows libpq's standard
@@ -228,6 +240,10 @@ mainContainer:
     KOBIL_ADMIN_ROLE: "{{ .Values.kobil.adminRole }}"
     KOBIL_SERVICE_CLIENT_ID: "{{ .Values.kobil.serviceClientId }}"
     KOBIL_IDP_USERS_API: "{{ .Values.kobil.idpUsersApi }}"
+    # Themeable brand colours (empty => app built-in defaults).
+    THEME_HEADER_COLOR: "{{ .Values.theme.headerColor }}"
+    THEME_PRIMARY_COLOR: "{{ .Values.theme.primaryColor }}"
+    THEME_NAVY_COLOR: "{{ .Values.theme.navyColor }}"
     PGHOST: "{{ .Values.database.host }}"
     PGPORT: "{{ .Values.database.port }}"
     PGUSER: "{{ .Values.database.user }}"
