@@ -14,6 +14,10 @@ const schema = z.object({
   KOBIL_ADMIN_ROLE: z.string().default("profile_admin"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 chars"),
   APP_BASE_URL: z.string().url(),
+  // Post-logout target for the profile (user) logout. Empty => app root.
+  // Set to the KOBIL Super-App deep link; must be registered in the login
+  // client's Valid Post Logout Redirect URIs.
+  OIDC_POST_LOGOUT_REDIRECT_URI: z.string().optional(),
   PROFILE_DATABASE_URL: z.string().min(1),
   PRIVACY_NOTICE_VERSION: z.string().default("2026-05-14"),
   PROFILE_EMBED_MODE: z

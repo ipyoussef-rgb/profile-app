@@ -112,6 +112,10 @@ oidc:
   clientSecret: ""
   # Optional override; empty = derive from app.baseUrl / the routing host.
   redirectUri: ""
+  # Where the profile (user) logout returns to. Empty => app root. Set to the
+  # KOBIL Super-App deep link. Must also be registered in the login client's
+  # "Valid Post Logout Redirect URIs" in KOBIL Identity.
+  postLogoutRedirectUri: ""
 
 # -- KOBIL Identity extras beyond the primary login client above. All fields
 # are OPTIONAL: leave a value empty to disable the matching feature (the app
@@ -233,6 +237,8 @@ mainContainer:
     # Derived from APP_BASE_URL unless oidc.redirectUri is set, so the
     # registered redirect URI and the one the app sends can never diverge.
     OIDC_REDIRECT_URI: '{{ .Values.oidc.redirectUri | default (printf "%s/api/auth/callback" (.Values.app.baseUrl | default (printf "https://%s.%s" .Values.routing.subdomain .Values.global.routing.domain))) }}'
+    # Empty => the app falls back to the app root.
+    OIDC_POST_LOGOUT_REDIRECT_URI: "{{ .Values.oidc.postLogoutRedirectUri }}"
     # KOBIL Identity extras (non-secret). Empty values are treated as unset
     # by the app (src/lib/env.ts coerces "" -> undefined for optionals).
     KOBIL_REALM: "{{ .Values.kobil.realm }}"

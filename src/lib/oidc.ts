@@ -25,7 +25,11 @@ export function redirectUri() {
 }
 
 export function postLogoutRedirectUri() {
-  return `${baseUrl()}/`;
+  // Where the user lands after RP-initiated logout. Defaults to the app root;
+  // override with OIDC_POST_LOGOUT_REDIRECT_URI (e.g. the KOBIL Super-App deep
+  // link). Whatever value is used MUST be registered in the login client's
+  // "Valid Post Logout Redirect URIs" in KOBIL Identity, or Keycloak rejects it.
+  return env().OIDC_POST_LOGOUT_REDIRECT_URI || `${baseUrl()}/`;
 }
 
 // Exchange a (long-lived, offline_access) refresh token for a fresh access
