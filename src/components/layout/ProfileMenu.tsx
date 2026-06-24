@@ -66,8 +66,14 @@ export function ProfileMenu({
     <main className="mx-auto min-h-screen w-full max-w-md bg-[var(--color-kobil-surface)]">
       <h1 className="sr-only">Profil und Einstellungen</h1>
 
-      {/* Navy brand header — colour is themeable via --color-kobil-header. */}
-      <header className="relative h-[150px] bg-[var(--color-kobil-header)]">
+      {/* Navy brand header — colour is themeable via --color-kobil-header.
+          The header bg fills the device safe-area (notch/status bar) and its
+          content is padded below it, so the title is never clipped on devices
+          like Pixel 9 / iPhone 16 (requires viewport-fit=cover, set in layout). */}
+      <header
+        className="relative bg-[var(--color-kobil-header)]"
+        style={{ height: "calc(150px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)" }}
+      >
         <p className="pt-[22px] text-center text-[15px] font-semibold uppercase tracking-[0.2em] text-white">
           Profil
         </p>
@@ -75,7 +81,10 @@ export function ProfileMenu({
 
       {/* White card overlapping the header; the avatar centre is pinned to the
           card's top edge so it sits exactly half on the navy, half on white. */}
-      <section className="relative -mt-[28px] rounded-t-[30px] bg-[var(--color-kobil-surface)] px-[22px] pb-4 pt-[60px]">
+      <section
+        className="relative -mt-[28px] rounded-t-[30px] bg-[var(--color-kobil-surface)] px-[22px] pt-[60px]"
+        style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+      >
         <div
           aria-hidden="true"
           className="absolute left-1/2 top-0 flex h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white bg-[#e6e8ee] text-3xl font-semibold text-[#7b8499]"

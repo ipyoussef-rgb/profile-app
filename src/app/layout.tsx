@@ -1,5 +1,5 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
 import { env } from "@/lib/env";
 
@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   title: "Mein Profil — KOBIL",
   description:
     "Verwalten Sie Ihr Profil, Datenschutzeinstellungen und persönliche Daten.",
+};
+
+// viewport-fit=cover is required for env(safe-area-inset-*) to resolve to the
+// real notch / status-bar insets inside a device WebView (Pixel 9 / iPhone 16);
+// without it the header renders under the status bar. themeColor tints the
+// status bar to match the navy header.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#1b3a87",
 };
 
 // Accept only hex / rgb(a) / hsl(a) / a bare CSS named colour — nothing that
