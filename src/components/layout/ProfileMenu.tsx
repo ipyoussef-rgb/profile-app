@@ -16,7 +16,6 @@ type Item = {
 const SETTINGS: Item[] = [
   { key: "account", label: "Konto", pageName: "account", icon: <IconKey /> },
   { key: "privacy", label: "Privatsphäre & Sicherheit", pageName: "privacy_security", icon: <IconLock /> },
-  { key: "address", label: "Adresse", pageName: "addresses", icon: <IconHome /> },
   { key: "signature", label: "Signatur", pageName: "signature", icon: <IconPen /> },
 ];
 
@@ -199,9 +198,6 @@ function IconKey() {
 }
 function IconLock() {
   return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><rect {...sw} x="5" y="11" width="14" height="9" rx="2" /><path {...sw} d="M8 11V8a4 4 0 018 0v3" /><path {...sw} d="M12 15v2" /></svg>;
-}
-function IconHome() {
-  return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path {...sw} d="M4 11l8-6 8 6" /><path {...sw} d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9" /></svg>;
 }
 function IconPen() {
   return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path {...sw} d="M4 20h4l10-10-4-4L4 16v4z" /><path {...sw} d="M13.5 6.5l4 4" /></svg>;
