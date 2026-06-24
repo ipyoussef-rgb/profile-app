@@ -45,7 +45,16 @@ function applyKobilAliases() {
 export function env() {
   if (cached) return cached;
   applyKobilAliases();
-  const parsed = schema.safeParse(process.env);
+  // The Helm chart carries EVERY config key (incl. optional ones) so they show
+  // up in values.yaml, defaulting them to "". But our optional fields are
+  // `z.string().min(1).optional()`, which reject "" (only `undefined` passes).
+  // Treat an empty-string env var as "unset" so an empty chart default doesn't
+  // crash the app on boot. Required fields still fail (now as "Required").
+  const raw: Record<string, string | undefined> = { ...process.env };
+  for (const k of Object.keys(raw)) {
+    if (raw[k] === "") raw[k] = undefined;
+  }
+  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
     throw new Error(`Invalid environment configuration:\n${issues}`);
