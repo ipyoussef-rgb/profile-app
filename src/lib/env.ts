@@ -2,8 +2,8 @@ import { z } from "zod";
 
 const schema = z.object({
   KOBIL_IDP_ISSUER: z.string().url(),
+  // KOBIL Identity realm (a.k.a. tenant — the same value in this setup).
   KOBIL_REALM: z.string().min(1).optional(),
-  KOBIL_TENANT: z.string().min(1).optional(),
   KOBIL_MINIAPP_CLIENT_ID: z.string().min(1),
   KOBIL_MINIAPP_CLIENT_SECRET: z.string().min(1),
   KOBIL_ADMIN_CLIENT_ID: z.string().min(1).optional(),

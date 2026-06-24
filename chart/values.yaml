@@ -118,9 +118,8 @@ oidc:
 # treats an empty env var as unset). Secrets (`*Secret`) land in the chart's
 # Secret; the rest go to the ConfigMap.
 kobil:
-  # Realm / tenant identifiers for KOBIL Identity (informational).
+  # KOBIL Identity realm (a.k.a. tenant — the same value in this setup).
   realm: ""
-  tenant: ""
   # profile-admin client (Authorization Code + PKCE) that gates /admin/*.
   # Empty => /admin/* refuses to authenticate.
   adminClientId: ""
@@ -225,7 +224,6 @@ mainContainer:
     # KOBIL Identity extras (non-secret). Empty values are treated as unset
     # by the app (src/lib/env.ts coerces "" -> undefined for optionals).
     KOBIL_REALM: "{{ .Values.kobil.realm }}"
-    KOBIL_TENANT: "{{ .Values.kobil.tenant }}"
     KOBIL_ADMIN_CLIENT_ID: "{{ .Values.kobil.adminClientId }}"
     KOBIL_ADMIN_ROLE: "{{ .Values.kobil.adminRole }}"
     KOBIL_SERVICE_CLIENT_ID: "{{ .Values.kobil.serviceClientId }}"
