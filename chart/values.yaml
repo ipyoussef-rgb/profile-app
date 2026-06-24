@@ -97,13 +97,6 @@ replicaCount: 1
 app:
   baseUrl: ""
   authSecret: ""
-  # Consent notice version (PRIVACY_NOTICE_VERSION). Bump when the privacy
-  # notice copy changes. Empty falls back to the app default.
-  privacyNoticeVersion: "2026-05-14"
-  # PROFILE_EMBED_MODE: "1" => embedded mode (the super-app host injects the
-  # access token and the app disables its own OIDC routes). Empty => standalone
-  # OIDC login.
-  embedMode: ""
 
 # -- OIDC configuration for the primary login client (profile-miniapp,
 # Authorization Code + PKCE). The discovery URL and client ID are public;
@@ -237,9 +230,6 @@ mainContainer:
     KOBIL_ADMIN_ROLE: "{{ .Values.kobil.adminRole }}"
     KOBIL_SERVICE_CLIENT_ID: "{{ .Values.kobil.serviceClientId }}"
     KOBIL_IDP_USERS_API: "{{ .Values.kobil.idpUsersApi }}"
-    # App behaviour
-    PRIVACY_NOTICE_VERSION: "{{ .Values.app.privacyNoticeVersion }}"
-    PROFILE_EMBED_MODE: "{{ .Values.app.embedMode }}"
     PGHOST: "{{ .Values.database.host }}"
     PGPORT: "{{ .Values.database.port }}"
     PGUSER: "{{ .Values.database.user }}"
