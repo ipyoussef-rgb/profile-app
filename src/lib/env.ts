@@ -54,6 +54,17 @@ export function env() {
   for (const k of Object.keys(raw)) {
     if (raw[k] === "") raw[k] = undefined;
   }
+  // KOBIL_IDP_ISSUER must be the BARE realm issuer — the app appends
+  // /.well-known/openid-configuration (discovery), /protocol/openid-connect/token
+  // (service-client token), and /v3_user (Users API) itself. The chart field is
+  // called OIDC_DISCOVERY_URL, so deployers naturally paste the full discovery
+  // URL; strip that suffix (and trailing slashes) so every consumer gets the
+  // issuer and the service-token / getUserInfo calls don't 404.
+  if (raw.KOBIL_IDP_ISSUER) {
+    raw.KOBIL_IDP_ISSUER = raw.KOBIL_IDP_ISSUER
+      .replace(/\/+\.well-known\/openid-configuration\/?$/i, "")
+      .replace(/\/+$/, "");
+  }
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
