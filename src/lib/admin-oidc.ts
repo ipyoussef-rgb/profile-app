@@ -26,5 +26,8 @@ export function adminRedirectUri() {
 }
 
 export function adminPostLogoutRedirectUri() {
-  return `${baseUrl()}/`;
+  // Return to the admin entry point after logout (not the user root). /admin is
+  // protected, so this lands on the admin login screen. Register exactly this
+  // URL in the admin client's "Valid post logout redirect URIs" in KOBIL Identity.
+  return `${baseUrl()}/admin`;
 }
