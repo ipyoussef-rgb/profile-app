@@ -160,6 +160,9 @@ export async function DELETE(req: NextRequest) {
           },
         });
       }
+      // Interest / attribute selections are personal data too — clearing the
+      // profile row alone would leave them behind after a deletion request.
+      await tx.userAttributeValue.deleteMany({ where: { user_id: user.sub } });
       await tx.privacyRequest.create({
         data: {
           user_id: user.sub,

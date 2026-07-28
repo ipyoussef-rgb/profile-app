@@ -32,16 +32,23 @@ export async function upsertProfile(userId: string, patch: ProfileUpdateInput) {
 }
 
 export async function anonymizeProfile(userId: string) {
-  return prisma.profile.update({
-    where: { user_id: userId },
-    data: {
-      display_name: null,
-      avatar_url: null,
-      profile_visibility: "private",
-      notification_preferences: Prisma.DbNull,
-      privacy_settings: Prisma.DbNull,
-      deletion_requested_at: new Date(),
-      anonymized_at: new Date(),
-    },
-  });
+  // Interest / attribute selections live in their own table, so they must be
+  // cleared alongside the profile row — otherwise they survive anonymization.
+  // One transaction so a partial wipe can't happen.
+  const [, profile] = await prisma.$transaction([
+    prisma.userAttributeValue.deleteMany({ where: { user_id: userId } }),
+    prisma.profile.update({
+      where: { user_id: userId },
+      data: {
+        display_name: null,
+        avatar_url: null,
+        profile_visibility: "private",
+        notification_preferences: Prisma.DbNull,
+        privacy_settings: Prisma.DbNull,
+        deletion_requested_at: new Date(),
+        anonymized_at: new Date(),
+      },
+    }),
+  ]);
+  return profile;
 }

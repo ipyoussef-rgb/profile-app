@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
+    "seed:interests": "node prisma/seed-interests.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
