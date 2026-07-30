@@ -49,7 +49,6 @@ export async function PATCH(req: NextRequest) {
     if (patch.gender !== undefined) attrs.gender = [patch.gender];
     if (patch.phone !== undefined) attrs.phone = [patch.phone];
     if (patch.fax !== undefined) attrs.faxNumber = [patch.fax];
-    if (patch.locale !== undefined) attrs.locale = [patch.locale];
     if (patch.birthdate !== undefined) {
       const kobilDate = birthdateIsoToKobil(patch.birthdate);
       if (kobilDate) attrs.birthdate = [kobilDate];

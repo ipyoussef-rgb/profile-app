@@ -32,7 +32,6 @@ export const de = {
     email: "E-Mail",
     phone: "Telefonnummer",
     fax: "Faxnummer",
-    locale: "Sprache",
     birthdate: "Geburtsdatum",
     address: "Adresse",
     organization: "Firmenname (optional)",

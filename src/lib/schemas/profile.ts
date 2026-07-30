@@ -16,15 +16,6 @@ const phoneField = z
 export const PROFILE_VISIBILITY = ["private", "miniapps", "public"] as const;
 export type ProfileVisibility = (typeof PROFILE_VISIBILITY)[number];
 
-const isValidLocale = (s: string) => {
-  try {
-    new Intl.Locale(s);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 export const addressSchema = z
   .object({
     // Company name sits in the address block in the KOBIL UI, though the IDP
@@ -82,7 +73,6 @@ export const idpProfileUpdateSchema = z
     gender: selectOf(GENDER_KEYS, "unknown gender"),
     phone: phoneField,
     fax: phoneField,
-    locale: z.string().refine(isValidLocale, "invalid BCP 47 locale").optional(),
     // The edit form submits DD.MM.YYYY (KOBIL's own format); the REST API may
     // still send ISO. Accept both and normalise at the write boundary.
     birthdate: z
@@ -112,7 +102,6 @@ export const FORBIDDEN_PROFILE_KEYS = [
   "otp",
   "birthdate",
   "phone",
-  "locale",
   "address",
   "first_name",
   "last_name",

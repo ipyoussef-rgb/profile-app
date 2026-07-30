@@ -110,7 +110,7 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   const raw = Object.fromEntries(formData.entries());
   const candidate: Record<string, unknown> = {};
 
-  const scalars = ["first_name", "last_name", "locale", "birthdate"] as const;
+  const scalars = ["first_name", "last_name", "birthdate"] as const;
   for (const k of scalars) {
     const v = raw[k];
     if (typeof v === "string" && v.trim() !== "") candidate[k] = v.trim();
@@ -161,7 +161,6 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   if (patch.gender !== undefined) attrs.gender = [patch.gender];
   if (patch.phone !== undefined) attrs.phone = [patch.phone];
   if (patch.fax !== undefined) attrs.faxNumber = [patch.fax];
-  if (patch.locale !== undefined) attrs.locale = [patch.locale];
   if (patch.birthdate !== undefined) {
     // Form submits ISO YYYY-MM-DD; KOBIL stores DD.MM.YYYY.
     const kobilDate = birthdateIsoToKobil(patch.birthdate);

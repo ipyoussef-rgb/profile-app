@@ -24,7 +24,6 @@ export type IdpProfileSnapshot = {
     email_verified: boolean | null;
     phone: string | null;
     fax: string | null;
-    locale: string | null;
     birthdate: string | null;
     address: {
       organization: string | null;
@@ -47,7 +46,6 @@ const EMPTY: IdpProfileSnapshot["data"] = {
   email_verified: null,
   phone: null,
   fax: null,
-  locale: null,
   birthdate: null,
   address: {
     organization: null,
@@ -82,7 +80,6 @@ export async function loadIdpProfile(email: string | undefined): Promise<IdpProf
         email_verified: u.emailVerified ?? null,
         phone: readIdpAttribute(u, "phone", "phone_number", "phoneNumber") ?? null,
         fax: readIdpAttribute(u, "faxNumber", "fax_number", "fax") ?? null,
-        locale: readIdpAttribute(u, "locale") ?? null,
         // KOBIL stores birthdate as DD.MM.YYYY — normalize to ISO so the
         // HTML <input type="date"> can prefill correctly. The age helper
         // accepts both formats.
