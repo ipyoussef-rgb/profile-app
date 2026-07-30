@@ -1,5 +1,22 @@
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import {
+  COUNTRY_KEYS,
+  DISTRICT_KEYS,
+  GENDER_KEYS,
+  TITLE_KEYS,
+} from "../idp-options";
+
+// A select whose value must be a known option key. "" is always accepted and
+// means "clear this attribute" (for `title` the realm even defines "" as a real
+// option, "Ich habe keinen Titel").
+const selectOf = (keys: readonly string[], message: string) =>
+  z.string().refine((v) => v === "" || keys.includes(v), message).optional();
+
+const phoneField = z
+  .string()
+  .refine((s) => s === "" || isValidPhoneNumber(s), "invalid E.164 phone number")
+  .optional();
 
 export const PROFILE_VISIBILITY = ["private", "miniapps", "public"] as const;
 export type ProfileVisibility = (typeof PROFILE_VISIBILITY)[number];
@@ -15,15 +32,21 @@ const isValidLocale = (s: string) => {
 
 export const addressSchema = z
   .object({
+    // Company name sits in the address block in the KOBIL UI, though the IDP
+    // stores it as its own `organization` attribute.
+    organization: z.string().trim().max(120).optional(),
     street: z.string().trim().max(120).optional(),
+    supplement: z.string().trim().max(120).optional(),
     locality: z.string().trim().max(80).optional(),
     postal_code: z.string().trim().max(20).optional(),
     country: z
       .string()
       .trim()
-      .length(2, "country must be ISO 3166-1 alpha-2")
-      .regex(/^[A-Z]{2}$/, "country must be uppercase ISO 3166-1 alpha-2")
+      .refine((v) => v === "" || COUNTRY_KEYS.includes(v), "unknown ISO 3166-1 alpha-2 country")
       .optional(),
+    // Where the user LIVES (single select) — not to be confused with the
+    // `districts` interest catalog.
+    district: selectOf(DISTRICT_KEYS, "unknown district"),
   })
   .strict();
 
@@ -61,12 +84,12 @@ export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
 // Validated server-side before the IDP call.
 export const idpProfileUpdateSchema = z
   .object({
+    title: selectOf(TITLE_KEYS, "unknown title"),
     first_name: z.string().trim().max(80).optional(),
     last_name: z.string().trim().max(80).optional(),
-    phone: z
-      .string()
-      .refine((s) => isValidPhoneNumber(s), "invalid E.164 phone number")
-      .optional(),
+    gender: selectOf(GENDER_KEYS, "unknown gender"),
+    phone: phoneField,
+    fax: phoneField,
     locale: z.string().refine(isValidLocale, "invalid BCP 47 locale").optional(),
     birthdate: z
       .string()
@@ -80,6 +103,11 @@ export type IdpProfileUpdateInput = z.infer<typeof idpProfileUpdateSchema>;
 
 // Fields the user must never edit through PATCH /me/profile.
 export const FORBIDDEN_PROFILE_KEYS = [
+  "title",
+  "gender",
+  "fax",
+  "organization",
+  "district",
   "email",
   "username",
   "preferred_username",

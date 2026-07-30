@@ -16,6 +16,12 @@ import {
   updateUserInIdp,
 } from "@/lib/kobil-idp";
 
+// Fields whose empty value is a deliberate choice that must reach the IDP so the
+// attribute is actually cleared (all of them selects). Free-text fields are not
+// listed: there, empty means "untouched".
+const CLEARABLE_SCALARS = ["title", "gender"] as const;
+const CLEARABLE_ADDRESS = ["country", "district"] as const;
+
 export type SaveResult =
   | { ok: true; warning?: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
@@ -88,18 +94,24 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   const raw = Object.fromEntries(formData.entries());
   const candidate: Record<string, unknown> = {};
 
-  const scalars = ["first_name", "last_name", "phone", "locale", "birthdate"] as const;
+  const scalars = ["first_name", "last_name", "phone", "fax", "locale", "birthdate"] as const;
   for (const k of scalars) {
     const v = raw[k];
     if (typeof v === "string" && v.trim() !== "") candidate[k] = v.trim();
   }
+  for (const k of CLEARABLE_SCALARS) {
+    const v = raw[k];
+    if (typeof v === "string") candidate[k] = v.trim();
+  }
 
   const addr: Record<string, string> = {};
-  for (const k of ["street", "locality", "postal_code", "country"] as const) {
+  for (const k of ["organization", "street", "supplement", "locality", "postal_code"] as const) {
     const v = raw[`address.${k}`];
-    if (typeof v === "string" && v.trim() !== "") {
-      addr[k] = k === "country" ? v.trim().toUpperCase() : v.trim();
-    }
+    if (typeof v === "string" && v.trim() !== "") addr[k] = v.trim();
+  }
+  for (const k of CLEARABLE_ADDRESS) {
+    const v = raw[`address.${k}`];
+    if (typeof v === "string") addr[k] = k === "country" ? v.trim().toUpperCase() : v.trim();
   }
   if (Object.keys(addr).length > 0) candidate.address = addr;
 
@@ -121,7 +133,12 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   if (patch.first_name !== undefined) idpPatch.firstName = patch.first_name;
   if (patch.last_name !== undefined) idpPatch.lastName = patch.last_name;
   const attrs: Record<string, string[]> = {};
+  // Attribute names are KOBIL's, taken from the realm user-attributes config —
+  // they are not our snake_case field names.
+  if (patch.title !== undefined) attrs.title = [patch.title];
+  if (patch.gender !== undefined) attrs.gender = [patch.gender];
   if (patch.phone !== undefined) attrs.phone = [patch.phone];
+  if (patch.fax !== undefined) attrs.faxNumber = [patch.fax];
   if (patch.locale !== undefined) attrs.locale = [patch.locale];
   if (patch.birthdate !== undefined) {
     // Form submits ISO YYYY-MM-DD; KOBIL stores DD.MM.YYYY.
@@ -129,10 +146,14 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
     if (kobilDate) attrs.birthdate = [kobilDate];
   }
   if (patch.address) {
-    if (patch.address.street !== undefined) attrs.street = [patch.address.street];
-    if (patch.address.locality !== undefined) attrs.locality = [patch.address.locality];
-    if (patch.address.postal_code !== undefined) attrs.postal_code = [patch.address.postal_code];
-    if (patch.address.country !== undefined) attrs.country = [patch.address.country];
+    const a = patch.address;
+    if (a.organization !== undefined) attrs.companyOrganizationName = [a.organization];
+    if (a.street !== undefined) attrs.street = [a.street];
+    if (a.supplement !== undefined) attrs.homeAddressSupplement = [a.supplement];
+    if (a.locality !== undefined) attrs.locality = [a.locality];
+    if (a.postal_code !== undefined) attrs.postal_code = [a.postal_code];
+    if (a.country !== undefined) attrs.country = [a.country];
+    if (a.district !== undefined) attrs.district = [a.district];
   }
   if (Object.keys(attrs).length > 0) idpPatch.attributes = attrs;
 

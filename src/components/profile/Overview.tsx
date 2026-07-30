@@ -3,6 +3,13 @@ import { getCopy, type Locale } from "@/lib/copy";
 import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { ageOverFromBirthdate } from "@/lib/schemas/profile";
 import type { IdpProfileSnapshot } from "@/lib/idp-prefill";
+import {
+  DISTRICT_OPTIONS,
+  GENDER_OPTIONS,
+  TITLE_OPTIONS,
+  countryLabel,
+  labelFor,
+} from "@/lib/idp-options";
 
 type Profile = {
   display_name: string | null;
@@ -67,8 +74,12 @@ export function Overview({
           </p>
         ) : (
           <dl className="grid grid-cols-1 gap-4 text-[15px] sm:grid-cols-2">
+            {/* Selects store an option key, so translate before display —
+                otherwise this reads "Ph.D." / "Male" instead of "Dr." / "Männlich". */}
+            <Row label={t.fields.title} value={labelFor(TITLE_OPTIONS, idp.data.title, locale)} />
             <Row label={t.fields.first_name} value={idp.data.first_name} />
             <Row label={t.fields.last_name} value={idp.data.last_name} />
+            <Row label={t.fields.gender} value={labelFor(GENDER_OPTIONS, idp.data.gender, locale)} />
             <Row label={t.fields.username} value={idp.data.username} />
             <Row
               label={t.fields.email}
@@ -84,13 +95,19 @@ export function Overview({
               }
             />
             <Row label={t.fields.phone} value={idp.data.phone} />
+            <Row label={t.fields.fax} value={idp.data.fax} />
             <Row
               label={t.fields.birthdate}
               value={formatBirthdateForDisplay(idp.data.birthdate, locale)}
             />
+            <Row label={t.fields.organization} value={idp.data.address.organization} />
             <Row
               label={t.fields.address}
               value={formatAddress(idp.data.address, locale)}
+            />
+            <Row
+              label={t.fields.district}
+              value={labelFor(DISTRICT_OPTIONS, idp.data.address.district, locale)}
             />
           </dl>
         )}
@@ -150,9 +167,16 @@ function formatBirthdateForDisplay(
 
 function formatAddress(
   a: IdpProfileSnapshot["data"]["address"],
-  _locale: Locale,
+  locale: Locale,
 ): string | null {
-  const parts = [a.street, [a.postal_code, a.locality].filter(Boolean).join(" "), a.country]
+  // Country is stored as an ISO code but shown by name, so "DE" reads
+  // "Deutschland" here rather than leaking the raw code.
+  const parts = [
+    a.street,
+    a.supplement,
+    [a.postal_code, a.locality].filter(Boolean).join(" "),
+    countryLabel(a.country, locale),
+  ]
     .filter(Boolean)
     .join(", ");
   return parts.length > 0 ? parts : null;

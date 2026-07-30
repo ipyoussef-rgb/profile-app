@@ -15,33 +15,50 @@ export type IdpProfileSnapshot = {
   configured: boolean;
   found: boolean;
   data: {
+    title: string | null;
     first_name: string | null;
     last_name: string | null;
+    gender: string | null;
     username: string | null;
     email: string | null;
     email_verified: boolean | null;
     phone: string | null;
+    fax: string | null;
     locale: string | null;
     birthdate: string | null;
     address: {
+      organization: string | null;
       street: string | null;
+      supplement: string | null;
       locality: string | null;
       postal_code: string | null;
       country: string | null;
+      district: string | null;
     };
   };
 };
 
 const EMPTY: IdpProfileSnapshot["data"] = {
+  title: null,
   first_name: null,
   last_name: null,
+  gender: null,
   username: null,
   email: null,
   email_verified: null,
   phone: null,
+  fax: null,
   locale: null,
   birthdate: null,
-  address: { street: null, locality: null, postal_code: null, country: null },
+  address: {
+    organization: null,
+    street: null,
+    supplement: null,
+    locality: null,
+    postal_code: null,
+    country: null,
+    district: null,
+  },
 };
 
 /** Pass the user's email — the KOBIL v3_user endpoint is keyed by email,
@@ -58,12 +75,15 @@ export async function loadIdpProfile(email: string | undefined): Promise<IdpProf
       configured: true,
       found: true,
       data: {
+        title: readIdpAttribute(u, "title") ?? null,
         first_name: u.firstName ?? readIdpAttribute(u, "firstName", "given_name") ?? null,
         last_name: u.lastName ?? readIdpAttribute(u, "lastName", "family_name") ?? null,
+        gender: readIdpAttribute(u, "gender") ?? null,
         username: u.username ?? null,
         email: u.email ?? null,
         email_verified: u.emailVerified ?? null,
         phone: readIdpAttribute(u, "phone", "phone_number", "phoneNumber") ?? null,
+        fax: readIdpAttribute(u, "faxNumber", "fax_number", "fax") ?? null,
         locale: readIdpAttribute(u, "locale") ?? null,
         // KOBIL stores birthdate as DD.MM.YYYY — normalize to ISO so the
         // HTML <input type="date"> can prefill correctly. The age helper
@@ -73,10 +93,14 @@ export async function loadIdpProfile(email: string | undefined): Promise<IdpProf
             readIdpAttribute(u, "birthdate", "bod", "birthDate"),
           ) ?? null,
         address: {
+          organization: readIdpAttribute(u, "companyOrganizationName", "organization") ?? null,
           street: readIdpAttribute(u, "street", "street_address") ?? null,
+          supplement:
+            readIdpAttribute(u, "homeAddressSupplement", "home_address_supplement") ?? null,
           locality: readIdpAttribute(u, "locality", "city") ?? null,
           postal_code: readIdpAttribute(u, "postal_code", "postalCode") ?? null,
           country: readIdpAttribute(u, "country", "country_code") ?? null,
+          district: readIdpAttribute(u, "district") ?? null,
         },
       },
     };

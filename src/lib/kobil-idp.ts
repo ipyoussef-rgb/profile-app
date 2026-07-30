@@ -241,22 +241,30 @@ export async function updateUserInIdp(
   // Read-back verification: re-fetch the user and confirm each attribute we
   // sent actually landed. This is the automated equivalent of "save, then
   // check via getUserInfo" — the result is logged AND returned to the caller.
-  let persistedKeys = sentAttributeKeys;
+  // Attributes we deliberately CLEARED are expected to be absent afterwards, so
+  // they must be excluded from the check — otherwise every intentional clear
+  // (e.g. "Ich habe keinen Titel") would be reported as "KOBIL dropped this".
+  const clearedKeys = sentAttributeKeys.filter((k) => {
+    const v = patch.attributes?.[k];
+    return !v || v.length === 0 || v.every((x) => x === "");
+  });
+  const expectedKeys = sentAttributeKeys.filter((k) => !clearedKeys.includes(k));
+
+  let persistedKeys = expectedKeys;
   let missingKeys: string[] = [];
-  if (sentAttributeKeys.length > 0) {
+  if (expectedKeys.length > 0) {
     try {
       const after = await getUserFromIdp(email);
       if (after) {
-        persistedKeys = sentAttributeKeys.filter(
-          (k) => readIdpAttribute(after, k) !== undefined,
-        );
-        missingKeys = sentAttributeKeys.filter((k) => !persistedKeys.includes(k));
+        persistedKeys = expectedKeys.filter((k) => readIdpAttribute(after, k) !== undefined);
+        missingKeys = expectedKeys.filter((k) => !persistedKeys.includes(k));
       }
     } catch {
       /* verification GET failed — leave optimistic persistedKeys */
     }
     logEvent(missingKeys.length > 0 ? "warn" : "info", "kobil_update_user_verify", {
       sent_attribute_keys: sentAttributeKeys,
+      cleared_keys: clearedKeys,
       persisted_keys: persistedKeys,
       missing_keys: missingKeys,
     });

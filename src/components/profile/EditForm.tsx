@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/Card";
 import { getCopy, type Locale } from "@/lib/copy";
 import type { IdpProfileSnapshot } from "@/lib/idp-prefill";
+import {
+  DISTRICT_OPTIONS,
+  GENDER_OPTIONS,
+  TITLE_OPTIONS,
+  countryOptions,
+  optionsFor,
+} from "@/lib/idp-options";
 
 const actionLink =
   "flex min-h-[var(--tap-kobil)] items-center justify-center rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] px-4 py-3 text-center text-base font-medium text-[var(--color-kobil-text)] transition-colors hover:border-[var(--color-kobil-primary)] hover:bg-[var(--color-kobil-primary-tint)] hover:text-[var(--color-kobil-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-kobil-ring)]";
@@ -52,6 +59,38 @@ export function EditForm({
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* Title / gender are selects whose stored value is the option KEY
+                ("Ph.D.", "Male"); the visible label is locale-dependent. */}
+            <Field label={t.fields.title}>
+              <select
+                name="title"
+                defaultValue={idp.data.title ?? ""}
+                disabled={!idp.configured}
+                className={inputClass}
+              >
+                {optionsFor(TITLE_OPTIONS, locale).map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label={t.fields.gender}>
+              <select
+                name="gender"
+                defaultValue={idp.data.gender ?? ""}
+                disabled={!idp.configured}
+                className={inputClass}
+              >
+                {/* No empty option in the realm, so offer one to allow clearing. */}
+                <option value="">—</option>
+                {optionsFor(GENDER_OPTIONS, locale).map((o) => (
+                  <option key={o.key} value={o.key}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label={t.fields.first_name}>
               <input
                 name="first_name"
@@ -84,6 +123,18 @@ export function EditForm({
                 className={inputClass}
               />
             </Field>
+            <Field label={t.fields.fax} helper="+49 6241 1234567 (E.164)">
+              <input
+                name="fax"
+                type="tel"
+                inputMode="tel"
+                autoComplete="fax"
+                placeholder="+49…"
+                defaultValue={idp.data.fax ?? ""}
+                disabled={!idp.configured}
+                className={inputClass}
+              />
+            </Field>
             <Field label={t.fields.birthdate} helper="YYYY-MM-DD">
               <input
                 name="birthdate"
@@ -103,6 +154,34 @@ export function EditForm({
               {t.edit.helpers.address}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
+              {/* All ISO 3166-1 countries, localised at runtime, Germany pinned
+                  to the top as the realm's preferred option. */}
+              <Field label={t.fields.country}>
+                <select
+                  name="address.country"
+                  defaultValue={idp.data.address.country ?? ""}
+                  autoComplete="country"
+                  disabled={!idp.configured}
+                  className={inputClass}
+                >
+                  <option value="">—</option>
+                  {countryOptions(locale).map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label={t.fields.organization}>
+                <input
+                  name="address.organization"
+                  defaultValue={idp.data.address.organization ?? ""}
+                  maxLength={120}
+                  autoComplete="organization"
+                  disabled={!idp.configured}
+                  className={inputClass}
+                />
+              </Field>
               <Field label={t.fields.street}>
                 <input
                   name="address.street"
@@ -113,12 +192,12 @@ export function EditForm({
                   className={inputClass}
                 />
               </Field>
-              <Field label={t.fields.locality}>
+              <Field label={t.fields.supplement}>
                 <input
-                  name="address.locality"
-                  placeholder={t.fields.locality}
-                  defaultValue={idp.data.address.locality ?? ""}
-                  autoComplete="address-level2"
+                  name="address.supplement"
+                  defaultValue={idp.data.address.supplement ?? ""}
+                  maxLength={120}
+                  autoComplete="address-line2"
                   disabled={!idp.configured}
                   className={inputClass}
                 />
@@ -134,16 +213,32 @@ export function EditForm({
                   className={inputClass}
                 />
               </Field>
-              <Field label={t.fields.country}>
+              <Field label={t.fields.locality}>
                 <input
-                  name="address.country"
-                  placeholder="DE"
-                  maxLength={2}
-                  defaultValue={idp.data.address.country ?? ""}
-                  autoComplete="country"
+                  name="address.locality"
+                  placeholder={t.fields.locality}
+                  defaultValue={idp.data.address.locality ?? ""}
+                  autoComplete="address-level2"
                   disabled={!idp.configured}
-                  className={`${inputClass} uppercase`}
+                  className={inputClass}
                 />
+              </Field>
+              {/* Where the user LIVES — distinct from the `districts` interest
+                  catalog under Interessen & Eigenschaften. */}
+              <Field label={t.fields.district}>
+                <select
+                  name="address.district"
+                  defaultValue={idp.data.address.district ?? ""}
+                  disabled={!idp.configured}
+                  className={inputClass}
+                >
+                  <option value="">—</option>
+                  {optionsFor(DISTRICT_OPTIONS, locale).map((o) => (
+                    <option key={o.key} value={o.key}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </div>
           </fieldset>

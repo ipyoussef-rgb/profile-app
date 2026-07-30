@@ -42,18 +42,27 @@ export async function PATCH(req: NextRequest) {
     if (patch.first_name !== undefined) idpPatch.firstName = patch.first_name;
     if (patch.last_name !== undefined) idpPatch.lastName = patch.last_name;
 
+    // Attribute names are KOBIL's, from the realm user-attributes config. Keep
+    // this mapping in sync with saveIdentityAction in profile/edit/actions.ts.
     const attrs: Record<string, string[]> = {};
+    if (patch.title !== undefined) attrs.title = [patch.title];
+    if (patch.gender !== undefined) attrs.gender = [patch.gender];
     if (patch.phone !== undefined) attrs.phone = [patch.phone];
+    if (patch.fax !== undefined) attrs.faxNumber = [patch.fax];
     if (patch.locale !== undefined) attrs.locale = [patch.locale];
     if (patch.birthdate !== undefined) {
       const kobilDate = birthdateIsoToKobil(patch.birthdate);
       if (kobilDate) attrs.birthdate = [kobilDate];
     }
     if (patch.address) {
-      if (patch.address.street !== undefined) attrs.street = [patch.address.street];
-      if (patch.address.locality !== undefined) attrs.locality = [patch.address.locality];
-      if (patch.address.postal_code !== undefined) attrs.postal_code = [patch.address.postal_code];
-      if (patch.address.country !== undefined) attrs.country = [patch.address.country];
+      const a = patch.address;
+      if (a.organization !== undefined) attrs.companyOrganizationName = [a.organization];
+      if (a.street !== undefined) attrs.street = [a.street];
+      if (a.supplement !== undefined) attrs.homeAddressSupplement = [a.supplement];
+      if (a.locality !== undefined) attrs.locality = [a.locality];
+      if (a.postal_code !== undefined) attrs.postal_code = [a.postal_code];
+      if (a.country !== undefined) attrs.country = [a.country];
+      if (a.district !== undefined) attrs.district = [a.district];
     }
     if (Object.keys(attrs).length > 0) idpPatch.attributes = attrs;
 
