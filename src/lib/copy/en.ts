@@ -41,7 +41,6 @@ export const en = {
     locality: "Town/City",
     postal_code: "ZIP code",
     country: "Country",
-    district: "District if living in Worms (optional)",
     display_name: "Display name",
     avatar_url: "Avatar URL",
     profile_visibility: "Profile visibility",

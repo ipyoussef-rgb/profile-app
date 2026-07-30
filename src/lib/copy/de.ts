@@ -41,7 +41,6 @@ export const de = {
     locality: "Ort/Stadt",
     postal_code: "PLZ",
     country: "Land",
-    district: "Bezirk, wenn in Worms wohnhaft (optional)",
     display_name: "Anzeigename",
     avatar_url: "Avatar-URL",
     profile_visibility: "Sichtbarkeit",

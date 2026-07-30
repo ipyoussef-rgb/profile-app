@@ -7,8 +7,10 @@
 // value, or the profile shows "Ph.D. Youssef" instead of "Dr. Youssef".
 //
 // The empty string is a real, meaningful key: for `title` the realm defines it
-// as "Ich habe keinen Titel". For gender/district there is no empty option in
+// as "Ich habe keinen Titel". For gender there is no empty option in
 // the realm, so we use "" purely as the sentinel that CLEARS the attribute.
+
+import { getCountries, getCountryCallingCode, parsePhoneNumber } from "libphonenumber-js";
 
 import type { Locale } from "./copy";
 
@@ -27,20 +29,12 @@ export const GENDER_OPTIONS: Options = [
   { key: "Prefer not to say", de: "Keine Angabe", en: "Prefer not to say" },
 ];
 
-// Worms Ortsteile. NOTE: this list is duplicated as the `districts` catalog the
-// admin manages for interests — `district` here is where the user LIVES (single
-// select), the catalog is which districts they FOLLOW. Add new Ortsteile to both.
-const DISTRICT_NAMES = [
-  "Zentrum", "Abenheim", "Heppenheim", "Herrnsheim", "Hochheim", "Horchheim",
-  "Ibersheim", "Leiselheim", "Neuhausen", "Pfeddersheim", "Pfiffligheim",
-  "Rheindürkheim", "Weinsheim", "Wiesoppenheim",
-] as const;
-
-export const DISTRICT_OPTIONS: Options = DISTRICT_NAMES.map((n) => ({ key: n, de: n, en: n }));
+// NOTE: Worms districts are deliberately NOT here. They are managed as the
+// `districts` interest catalog in the profile admin, not as an IDP identity
+// attribute.
 
 export const TITLE_KEYS = TITLE_OPTIONS.map((o) => o.key);
 export const GENDER_KEYS = GENDER_OPTIONS.map((o) => o.key);
-export const DISTRICT_KEYS = DISTRICT_OPTIONS.map((o) => o.key);
 
 /** Localised label for a stored key. Falls back to the key itself so an
  *  unexpected value from the IDP is still shown rather than silently dropped. */
@@ -88,6 +82,46 @@ export function countryOptions(locale: Locale): { key: string; label: string }[]
   const i = list.findIndex((c) => c.key === "DE");
   if (i > 0) list.unshift(list.splice(i, 1)[0]);
   return list;
+}
+
+/** Dial codes for the phone/fax prefix picker — the code alone ("+49"), with no
+ *  country name, matching the native app. Codes are therefore deduplicated
+ *  (many countries share one, e.g. +1) and sorted numerically, with +49 pinned
+ *  first for this tenant. The stored value is the bare code, so no country
+ *  lookup is needed when recombining into E.164. */
+export const DEFAULT_DIAL_CODE = "49";
+
+export function dialCodeOptions(): { key: string; label: string }[] {
+  const codes = new Set<string>();
+  for (const country of getCountries()) {
+    try {
+      codes.add(getCountryCallingCode(country));
+    } catch {
+      /* no known calling code — skip */
+    }
+  }
+  const list = [...codes].sort((a, b) => Number(a) - Number(b));
+  const i = list.indexOf(DEFAULT_DIAL_CODE);
+  if (i > 0) list.unshift(list.splice(i, 1)[0]);
+  return list.map((code) => ({ key: code, label: `+${code}` }));
+}
+
+/** Split a stored E.164 number into the dial code to preselect and the national
+ *  part to show in the text field. Falls back to the default code plus the raw
+ *  digits so a malformed stored value stays editable instead of vanishing. */
+export function splitPhone(
+  e164: string | null | undefined,
+): { code: string; national: string } {
+  if (!e164) return { code: DEFAULT_DIAL_CODE, national: "" };
+  try {
+    const p = parsePhoneNumber(e164);
+    if (p?.countryCallingCode) {
+      return { code: String(p.countryCallingCode), national: String(p.nationalNumber) };
+    }
+  } catch {
+    /* not parseable — fall through */
+  }
+  return { code: DEFAULT_DIAL_CODE, national: e164.replace(/^\+/, "").replace(/\D/g, "") };
 }
 
 export function countryLabel(code: string | null | undefined, locale: Locale): string | null {

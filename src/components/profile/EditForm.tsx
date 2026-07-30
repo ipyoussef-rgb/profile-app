@@ -16,12 +16,13 @@ import {
 import { getCopy, type Locale } from "@/lib/copy";
 import type { IdpProfileSnapshot } from "@/lib/idp-prefill";
 import {
-  DISTRICT_OPTIONS,
   GENDER_OPTIONS,
   TITLE_OPTIONS,
   countryOptions,
   optionsFor,
 } from "@/lib/idp-options";
+import { BirthdateField, PhoneField } from "@/components/profile/inputs";
+import { birthdateIsoToKobil } from "@/lib/schemas/profile";
 
 const actionLink =
   "flex min-h-[var(--tap-kobil)] items-center justify-center rounded-[var(--radius-kobil-sm)] border border-[var(--color-kobil-border)] px-4 py-3 text-center text-base font-medium text-[var(--color-kobil-text)] transition-colors hover:border-[var(--color-kobil-primary)] hover:bg-[var(--color-kobil-primary-tint)] hover:text-[var(--color-kobil-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-kobil-ring)]";
@@ -111,37 +112,17 @@ export function EditForm({
                 className={inputClass}
               />
             </Field>
-            <Field label={t.fields.phone} helper="+49 170 1234567 (E.164)">
-              <input
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="+49…"
-                defaultValue={idp.data.phone ?? ""}
-                disabled={!idp.configured}
-                className={inputClass}
-              />
+            <Field label={t.fields.phone}>
+              <PhoneField name="phone" value={idp.data.phone} disabled={!idp.configured} />
             </Field>
-            <Field label={t.fields.fax} helper="+49 6241 1234567 (E.164)">
-              <input
-                name="fax"
-                type="tel"
-                inputMode="tel"
-                autoComplete="fax"
-                placeholder="+49…"
-                defaultValue={idp.data.fax ?? ""}
-                disabled={!idp.configured}
-                className={inputClass}
-              />
+            <Field label={t.fields.fax}>
+              <PhoneField name="fax" value={idp.data.fax} disabled={!idp.configured} />
             </Field>
-            <Field label={t.fields.birthdate} helper="YYYY-MM-DD">
-              <input
+            <Field label={t.fields.birthdate}>
+              <BirthdateField
                 name="birthdate"
-                type="date"
-                defaultValue={idp.data.birthdate ?? ""}
+                value={birthdateIsoToKobil(idp.data.birthdate)}
                 disabled={!idp.configured}
-                className={inputClass}
               />
             </Field>
           </div>
@@ -222,23 +203,6 @@ export function EditForm({
                   disabled={!idp.configured}
                   className={inputClass}
                 />
-              </Field>
-              {/* Where the user LIVES — distinct from the `districts` interest
-                  catalog under Interessen & Eigenschaften. */}
-              <Field label={t.fields.district}>
-                <select
-                  name="address.district"
-                  defaultValue={idp.data.address.district ?? ""}
-                  disabled={!idp.configured}
-                  className={inputClass}
-                >
-                  <option value="">—</option>
-                  {optionsFor(DISTRICT_OPTIONS, locale).map((o) => (
-                    <option key={o.key} value={o.key}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
               </Field>
             </div>
           </fieldset>

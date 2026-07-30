@@ -4,7 +4,6 @@ import { Badge, Button, Card, CardDescription, CardTitle } from "@/components/ui
 import { ageOverFromBirthdate } from "@/lib/schemas/profile";
 import type { IdpProfileSnapshot } from "@/lib/idp-prefill";
 import {
-  DISTRICT_OPTIONS,
   GENDER_OPTIONS,
   TITLE_OPTIONS,
   countryLabel,
@@ -104,10 +103,6 @@ export function Overview({
             <Row
               label={t.fields.address}
               value={formatAddress(idp.data.address, locale)}
-            />
-            <Row
-              label={t.fields.district}
-              value={labelFor(DISTRICT_OPTIONS, idp.data.address.district, locale)}
             />
           </dl>
         )}

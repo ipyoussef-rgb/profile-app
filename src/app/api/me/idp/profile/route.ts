@@ -62,7 +62,6 @@ export async function PATCH(req: NextRequest) {
       if (a.locality !== undefined) attrs.locality = [a.locality];
       if (a.postal_code !== undefined) attrs.postal_code = [a.postal_code];
       if (a.country !== undefined) attrs.country = [a.country];
-      if (a.district !== undefined) attrs.district = [a.district];
     }
     if (Object.keys(attrs).length > 0) idpPatch.attributes = attrs;
 

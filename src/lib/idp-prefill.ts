@@ -33,7 +33,6 @@ export type IdpProfileSnapshot = {
       locality: string | null;
       postal_code: string | null;
       country: string | null;
-      district: string | null;
     };
   };
 };
@@ -57,7 +56,6 @@ const EMPTY: IdpProfileSnapshot["data"] = {
     locality: null,
     postal_code: null,
     country: null,
-    district: null,
   },
 };
 
@@ -100,7 +98,6 @@ export async function loadIdpProfile(email: string | undefined): Promise<IdpProf
           locality: readIdpAttribute(u, "locality", "city") ?? null,
           postal_code: readIdpAttribute(u, "postal_code", "postalCode") ?? null,
           country: readIdpAttribute(u, "country", "country_code") ?? null,
-          district: readIdpAttribute(u, "district") ?? null,
         },
       },
     };

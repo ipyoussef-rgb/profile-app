@@ -42,6 +42,27 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Pin the page inside the Super-App WebView. Without this the whole document
+   can be dragged left/right and bounced up/down, which makes an embedded
+   mini-app feel loose and can reveal the host behind it:
+   - overscroll-behavior kills the rubber-band bounce and pull-to-refresh
+   - overflow-x: clip stops sideways panning (clip, not hidden, so it does not
+     create a scroll container that would break `position: sticky` headers)
+   - touch-action: pan-y allows vertical scrolling only, so no horizontal drag
+     and no double-tap/pinch zoom of the document
+   Elements that legitimately need to scroll sideways (wide tables, code) must
+   opt in with their own `overflow-x: auto` container. */
+html,
+body {
+  overscroll-behavior: none;
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+body {
+  touch-action: pan-y;
+}
+
 html, body {
   background:
     radial-gradient(1200px 600px at 0% -10%, rgba(46, 79, 255, 0.10), transparent 60%),

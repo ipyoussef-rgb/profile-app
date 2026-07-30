@@ -20,7 +20,23 @@ import {
 // attribute is actually cleared (all of them selects). Free-text fields are not
 // listed: there, empty means "untouched".
 const CLEARABLE_SCALARS = ["title", "gender"] as const;
-const CLEARABLE_ADDRESS = ["country", "district"] as const;
+
+/** Rebuild E.164 from the picked dial code + the typed national digits. The code
+ *  is never typed, so it cannot be malformed; an empty national part means
+ *  "untouched" and yields undefined so the attribute is left alone. */
+function combinePhone(
+  raw: Record<string, unknown>,
+  field: string,
+): string | undefined {
+  const national = raw[`${field}_national`];
+  if (typeof national !== "string") return undefined;
+  const digits = national.replace(/\D/g, "");
+  if (digits === "") return undefined;
+  const code = raw[`${field}_code`];
+  if (typeof code !== "string" || !/^\d{1,4}$/.test(code)) return undefined;
+  return `+${code}${digits}`;
+}
+const CLEARABLE_ADDRESS = ["country"] as const;
 
 export type SaveResult =
   | { ok: true; warning?: string }
@@ -94,10 +110,16 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   const raw = Object.fromEntries(formData.entries());
   const candidate: Record<string, unknown> = {};
 
-  const scalars = ["first_name", "last_name", "phone", "fax", "locale", "birthdate"] as const;
+  const scalars = ["first_name", "last_name", "locale", "birthdate"] as const;
   for (const k of scalars) {
     const v = raw[k];
     if (typeof v === "string" && v.trim() !== "") candidate[k] = v.trim();
+  }
+
+  // Phone and fax arrive split as <field>_country + <field>_national.
+  for (const k of ["phone", "fax"] as const) {
+    const combined = combinePhone(raw, k);
+    if (combined !== undefined) candidate[k] = combined;
   }
   for (const k of CLEARABLE_SCALARS) {
     const v = raw[k];
@@ -153,7 +175,6 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
     if (a.locality !== undefined) attrs.locality = [a.locality];
     if (a.postal_code !== undefined) attrs.postal_code = [a.postal_code];
     if (a.country !== undefined) attrs.country = [a.country];
-    if (a.district !== undefined) attrs.district = [a.district];
   }
   if (Object.keys(attrs).length > 0) idpPatch.attributes = attrs;
 

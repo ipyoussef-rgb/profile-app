@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
-import {
-  COUNTRY_KEYS,
-  DISTRICT_KEYS,
-  GENDER_KEYS,
-  TITLE_KEYS,
-} from "../idp-options";
+import { COUNTRY_KEYS, GENDER_KEYS, TITLE_KEYS } from "../idp-options";
 
 // A select whose value must be a known option key. "" is always accepted and
 // means "clear this attribute" (for `title` the realm even defines "" as a real
@@ -44,9 +39,6 @@ export const addressSchema = z
       .trim()
       .refine((v) => v === "" || COUNTRY_KEYS.includes(v), "unknown ISO 3166-1 alpha-2 country")
       .optional(),
-    // Where the user LIVES (single select) — not to be confused with the
-    // `districts` interest catalog.
-    district: selectOf(DISTRICT_KEYS, "unknown district"),
   })
   .strict();
 
@@ -91,9 +83,11 @@ export const idpProfileUpdateSchema = z
     phone: phoneField,
     fax: phoneField,
     locale: z.string().refine(isValidLocale, "invalid BCP 47 locale").optional(),
+    // The edit form submits DD.MM.YYYY (KOBIL's own format); the REST API may
+    // still send ISO. Accept both and normalise at the write boundary.
     birthdate: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
+      .regex(/^(?:\d{2}\.\d{2}\.\d{4}|\d{4}-\d{2}-\d{2})$/, "must be DD.MM.YYYY or YYYY-MM-DD")
       .optional(),
     address: addressSchema.optional(),
   })
@@ -107,7 +101,6 @@ export const FORBIDDEN_PROFILE_KEYS = [
   "gender",
   "fax",
   "organization",
-  "district",
   "email",
   "username",
   "preferred_username",
