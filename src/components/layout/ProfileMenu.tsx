@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandFooter } from "./BrandFooter";
-import { openProfileSection, bridgeDiagnostics, type ProfilePage } from "@/lib/host-bridge";
+import {
+  openProfileSection,
+  hostLogout,
+  bridgeDiagnostics,
+  type ProfilePage,
+} from "@/lib/host-bridge";
 
 type Item = {
   key: string;
@@ -54,6 +59,19 @@ export function ProfileMenu({
   }
 
   // Initials: first letter of first + last name (falls back to the email).
+  // Logout is a host event too: the Super App owns the SSO session, so when
+  // embedded it must tear it down. In a plain browser no bridge answers, and we
+  // fall back to the app's own OIDC end-session route so logout still works.
+  function logout() {
+    const how = hostLogout();
+    setLastAction(`logout() → ${how}`);
+    if (how === "none" || how === "error") {
+      window.location.assign("/api/auth/logout");
+      return;
+    }
+    setAnnounce("Sie werden in der KOBIL Super App abgemeldet.");
+  }
+
   const initials = (name ?? email ?? "?")
     .split(/[\s@.]+/)
     .filter(Boolean)
@@ -121,12 +139,13 @@ export function ProfileMenu({
         </MenuGroup>
 
         <div className="mt-7 flex justify-center">
-          <a
-            href="/api/auth/logout"
+          <button
+            type="button"
+            onClick={logout}
             className="inline-flex min-h-[var(--tap-kobil)] items-center justify-center rounded-full border border-[var(--color-kobil-border)] bg-[var(--color-kobil-surface)] px-9 text-sm font-semibold uppercase tracking-wide text-[var(--color-kobil-navy)] transition-colors hover:bg-[var(--color-kobil-surface-muted)]"
           >
             Ausloggen
-          </a>
+          </button>
         </div>
 
         <p aria-live="polite" className="sr-only">
@@ -143,6 +162,7 @@ export function ProfileMenu({
               <li>embedded: {String(debug.embedded)}</li>
               <li>inIframe: {String(debug.inIframe)} · scopes: {debug.scopes}</li>
               <li>openProfileSection fn: {debug.openProfileSection ?? "—"}</li>
+              <li>logout fn: {debug.logout ?? "—"} · openAdminMenu fn: {debug.openAdminMenu ?? "—"}</li>
               <li>iOS handlers: {debug.ios.length ? debug.ios.join(", ") : "—"}</li>
               <li>flutter: {String(debug.flutter)} · reactNative: {String(debug.reactNative)}</li>
               <li className="break-all pt-1">letzte Aktion: {lastAction || "—"}</li>

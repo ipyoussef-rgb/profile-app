@@ -7,6 +7,10 @@
 //   openProfileSection({ pageName }) → opens a native screen, returns void.
 //     pageName ∈ account | privacy_security | addresses | signature |
 //     contact_us | legal_entity | licences.
+//   logout({}) → the host tears down the session (it owns the SSO session, so
+//     the mini-app must not run its own OIDC end-session when embedded).
+//   openAdminMenu({}) → opens the host's admin menu; triggered by the hidden
+//     long-press gesture on the KOBIL logo in the footer.
 //
 // The host may attach this in several ways and the mini-app may run in an
 // iframe (bridge on window.parent / window.top), so we probe across scopes AND
@@ -109,36 +113,40 @@ export function isEmbedded(): boolean {
   );
 }
 
-/** Open a native Super App screen. Returns a short description of HOW it was
- *  dispatched (for diagnostics); "none" when no bridge was reachable. */
-export function openProfileSection(pageName: ProfilePage): string {
-  const obj = { pageName };
-  const str = JSON.stringify(obj);
+/** Dispatch a host-bridge call across every supported invocation convention.
+ *  Returns a short description of HOW it was dispatched (for diagnostics);
+ *  "none" when no bridge was reachable, "error" when a bridge threw. Callers
+ *  use that return value to decide whether a web fallback is needed. */
+function dispatch(handler: string, payload: AnyObj = {}): string {
+  const str = JSON.stringify(payload);
   try {
-    const hit = findFn("openProfileSection");
+    const hit = findFn(handler);
     if (hit) {
-      hit.fn(hit.android ? str : obj);
+      // Android's addJavascriptInterface only accepts primitives, so the
+      // payload crosses as a JSON string there; every other host takes the
+      // object. No-arg events still send {} to keep the signature stable.
+      hit.fn(hit.android ? str : payload);
       return `fn:${hit.where}${hit.android ? "(str)" : "(obj)"}`;
     }
-    const ios = iosHandler("openProfileSection");
+    const ios = iosHandler(handler);
     if (ios) {
-      ios.postMessage(obj);
+      ios.postMessage(payload);
       return "ios";
     }
     const fl = flutter();
     if (fl) {
-      fl("openProfileSection", obj);
+      fl(handler, payload);
       return "flutter";
     }
     const rn = reactNative();
     if (rn) {
-      rn.postMessage(JSON.stringify({ handler: "openProfileSection", ...obj }));
+      rn.postMessage(JSON.stringify({ handler, ...payload }));
       return "reactNative";
     }
     let posted = false;
     for (const { w } of windows()) {
       if (w !== window) {
-        w.postMessage({ type: "openProfileSection", ...obj }, "*");
+        w.postMessage({ type: handler, ...payload }, "*");
         posted = true;
       }
     }
@@ -148,6 +156,25 @@ export function openProfileSection(pageName: ProfilePage): string {
   }
 }
 
+/** Open a native Super App settings screen. */
+export function openProfileSection(pageName: ProfilePage): string {
+  return dispatch("openProfileSection", { pageName });
+}
+
+/** Ask the host to log the user out. The Super App owns the SSO session, so
+ *  when embedded it must perform the logout — the mini-app only signals intent.
+ *  Returns "none" in a plain browser, which is the caller's cue to fall back to
+ *  the app's own /api/auth/logout route. */
+export function hostLogout(): string {
+  return dispatch("logout");
+}
+
+/** Open the host's admin menu. Wired to the hidden long-press gesture on the
+ *  KOBIL logo, so it stays undiscoverable for normal users. */
+export function openAdminMenu(): string {
+  return dispatch("openAdminMenu");
+}
+
 /** Snapshot of which bridge endpoints are detected — powers the ?debug overlay
  *  so integration issues are visible instead of silent. */
 export function bridgeDiagnostics(): {
@@ -155,6 +182,8 @@ export function bridgeDiagnostics(): {
   inIframe: boolean;
   scopes: number;
   openProfileSection: string | null;
+  logout: string | null;
+  openAdminMenu: string | null;
   ios: string[];
   flutter: boolean;
   reactNative: boolean;
@@ -166,13 +195,19 @@ export function bridgeDiagnostics(): {
     inIframe = true;
   }
   const ops = findFn("openProfileSection");
+  const lo = findFn("logout");
+  const adm = findFn("openAdminMenu");
   const ios: string[] = [];
-  if (iosHandler("openProfileSection")) ios.push("openProfileSection");
+  for (const h of ["openProfileSection", "logout", "openAdminMenu"]) {
+    if (iosHandler(h)) ios.push(h);
+  }
   return {
     embedded: isEmbedded(),
     inIframe,
     scopes: windows().length,
     openProfileSection: ops ? ops.where : null,
+    logout: lo ? lo.where : null,
+    openAdminMenu: adm ? adm.where : null,
     ios,
     flutter: Boolean(flutter()),
     reactNative: Boolean(reactNative()),
