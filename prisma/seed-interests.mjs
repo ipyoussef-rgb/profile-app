@@ -4,10 +4,12 @@
 // Run deliberately — it is NOT wired into migrations or `postinstall`:
 //   npm run seed:interests
 //
-// Idempotent: catalogs and values are upserted on their stable slugs, so
-// re-running never duplicates rows and never clobbers labels you edited in
-// /admin/catalogs (it re-applies the values below, so edit here if you want a
-// different default). Nothing is deleted — values you added stay untouched.
+// Requires the same DB env the app uses: PROFILE_DATABASE_URL (see
+// prisma/schema.prisma). Idempotent: catalogs and values are upserted on their
+// stable slugs, so re-running never duplicates rows. It does re-apply the
+// labels below, so edit them here if you want different defaults. Nothing is
+// deleted — values an admin added stay untouched, and a catalog an admin
+// deactivated stays deactivated (`active` is deliberately not in the update).
 //
 // Source of the option lists: the KOBIL Identity `user-attributes` config for
 // the Worms tenant (`personalInterests`). Interests are deliberately NOT taken
