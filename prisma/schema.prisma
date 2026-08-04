@@ -1,0 +1,149 @@
+// Profile Service — owns user-editable product profile data, privacy ledger,
+// GDPR requests, and audit logs. Identity data lives in KOBIL Identity, NOT here.
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" for local dev; "rhel-openssl-3.0.x" for Vercel's serverless runtime.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // Vercel-Neon integration with prefix "PROFILE" injects these names:
+  //   PROFILE_DATABASE_URL          (pooled, for runtime)
+  //   PROFILE_DATABASE_URL_UNPOOLED (direct, for migrations)
+  url       = env("PROFILE_DATABASE_URL")
+  directUrl = env("PROFILE_DATABASE_URL_UNPOOLED")
+}
+
+// user_id == KOBIL Identity `sub` (UUID).
+// App-managed profile data. All identity/profile attributes that live in
+// KOBIL Identity (firstName, lastName, email, phone, address, locale,
+// birthdate, …) are read via getUserInfo and written via updateProfileUser —
+// not stored here. The local row holds only what KOBIL Identity doesn't
+// already own.
+model Profile {
+  user_id                  String    @id @db.Uuid
+  display_name             String?   @db.VarChar(80)
+  avatar_url               String?
+  profile_visibility       String    @default("private") // private | miniapps | public
+  notification_preferences Json?     @map("notification_preferences_json")
+  privacy_settings         Json?     @map("privacy_settings_json")
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+  deletion_requested_at    DateTime?
+  deleted_at               DateTime?
+  anonymized_at            DateTime?
+
+  @@map("profiles")
+}
+
+// Append-only consent ledger. Never UPDATE an existing row.
+model UserConsent {
+  id             String    @id @default(uuid()) @db.Uuid
+  user_id        String    @db.Uuid
+  purpose        String
+  legal_basis    String
+  granted        Boolean
+  notice_version String
+  source         String
+  created_at     DateTime  @default(now())
+  withdrawn_at   DateTime?
+  metadata       Json?
+
+  @@index([user_id, purpose, created_at])
+  @@map("user_consents")
+}
+
+model ProfileAuditLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  user_id         String   @db.Uuid
+  actor_subject   String   @db.Uuid
+  actor_client_id String?
+  action          String
+  changed_fields  String[]
+  decision        String   // allow | deny
+  reason          String?
+  request_id      String?
+  ip_address      String?
+  user_agent      String?
+  created_at      DateTime @default(now())
+
+  @@index([user_id, created_at])
+  @@map("profile_audit_logs")
+}
+
+model PrivacyRequest {
+  id           String    @id @default(uuid()) @db.Uuid
+  user_id      String    @db.Uuid
+  request_type String    // export | deletion
+  status       String    // received | in_progress | completed | rejected
+  requested_at DateTime  @default(now())
+  completed_at DateTime?
+  metadata     Json?
+
+  @@index([user_id, requested_at])
+  @@map("privacy_requests")
+}
+
+// Admin-managed catalogs of selectable attribute values (e.g. interests).
+model AttributeCatalog {
+  id           String                  @id @default(uuid()) @db.Uuid
+  slug         String                  @unique
+  name_en      String
+  name_de      String
+  multi_select Boolean                 @default(true)
+  active       Boolean                 @default(true)
+  created_at   DateTime                @default(now())
+  updated_at   DateTime                @updatedAt
+  values       AttributeCatalogValue[]
+
+  @@map("attribute_catalogs")
+}
+
+model AttributeCatalogValue {
+  id         String           @id @default(uuid()) @db.Uuid
+  catalog_id String           @db.Uuid
+  catalog    AttributeCatalog @relation(fields: [catalog_id], references: [id], onDelete: Cascade)
+  slug       String
+  label_en   String
+  label_de   String
+  sort_order Int              @default(0)
+  active     Boolean          @default(true)
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+
+  @@unique([catalog_id, slug])
+  @@index([catalog_id, active, sort_order])
+  @@map("attribute_catalog_values")
+}
+
+model UserAttributeValue {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  catalog_id String   @db.Uuid
+  value_id   String   @db.Uuid
+  created_at DateTime @default(now())
+
+  @@unique([user_id, catalog_id, value_id])
+  @@index([user_id, catalog_id])
+  @@map("user_attribute_values")
+}
+
+model AdminAuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  admin_subject  String   @db.Uuid
+  admin_username String?
+  target_user_id String?  @db.Uuid
+  action         String
+  resource       String?
+  metadata       Json?
+  request_id     String?
+  ip_address     String?
+  user_agent     String?
+  created_at     DateTime @default(now())
+
+  @@index([admin_subject, created_at])
+  @@index([target_user_id, created_at])
+  @@map("admin_audit_logs")
+}
