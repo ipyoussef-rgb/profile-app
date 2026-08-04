@@ -25,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GET /api/auth/reset` clears every cookie this app owns and returns to `/`, so
   a stuck WebView can always be recovered from the inside.
 
+### Security
+
+- npm is removed from the runtime image. The scanner reported Critical/High CVEs
+  in npm's own bundled dependencies (tar, sigstore, ip-address,
+  brace-expansion) — none of them in this app's lockfile. Nothing at runtime
+  uses npm or npx, so deleting it fixes those findings outright and shrinks the
+  image.
+- CVE-2026-54369 (libacl, an OS package of the pinned base image) is waived in
+  the ignore files with the reason that it cannot be patched from this
+  repository; it needs a rebuilt base image.
+
 ## [1.2.1] - 2026-08-04
 
 ### Fixed
