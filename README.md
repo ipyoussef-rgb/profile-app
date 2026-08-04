@@ -1,93 +1,189 @@
 # profile-app
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fipyoussef-rgb%2Fprofile-app&env=KOBIL_IDP_ISSUER,KOBIL_MINIAPP_CLIENT_ID,KOBIL_MINIAPP_CLIENT_SECRET,AUTH_SECRET,APP_BASE_URL,PRIVACY_NOTICE_VERSION&envDescription=See%20README%20%23%23%20KOBIL%20Identity%20section%20for%20what%20each%20variable%20is.&envLink=https%3A%2F%2Fgithub.com%2Fipyoussef-rgb%2Fprofile-app%23environment-variables&project-name=profile-app&repository-name=profile-app)
 
+A GDPR-aware User Profile miniapp for the KOBIL superapp.
 
-## Getting started
+KOBIL Identity is the source of truth for authentication and identity data.
+This service owns user-editable product profile data, privacy/consent ledger,
+GDPR export, deletion workflow, and an immutable audit log. eID and age
+verification are explicitly **out of scope** for this build.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Stack
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- Next.js 15 (App Router) · React 19 · Tailwind v4
+- KOBIL Identity OIDC (Authorization Code + PKCE) via `openid-client` v6
+- `jose`-signed HTTP-only session cookies (terbuch pattern)
+- Prisma 6 · PostgreSQL (Neon)
+- `zod` validation · `isomorphic-dompurify` text sanitization
+- Deploy: Vercel (single Next.js app)
 
-## Add your files
+## Endpoints
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+| Method | Path                          | Purpose |
+|--------|-------------------------------|---|
+| GET    | `/api/me/profile`             | Current user's profile (token identity fields read-only) |
+| PATCH  | `/api/me/profile`             | Update editable profile fields (strict allowlist) |
+| DELETE | `/api/me/profile`             | Request deletion; anonymizes profile data |
+| GET    | `/api/me/profile/export`      | GDPR JSON export (download) |
+| GET    | `/api/me/privacy/consents`    | Latest consent state per purpose |
+| PATCH  | `/api/me/privacy/consents`    | Append immutable consent events |
+| GET    | `/api/me/privacy/requests`    | List user's privacy/GDPR requests |
+| GET    | `/api/auth/login`             | Start OIDC PKCE flow |
+| GET    | `/api/auth/callback`          | OIDC callback (set session cookie) |
+| GET    | `/api/auth/logout`            | Clear session + KOBIL end-session |
+
+## Screens
+
+User-facing (require `profile_session` cookie via KOBIL login):
+
+1. **`/profile`** — overview with read-only KOBIL Identity fields
+2. **`/profile/edit`** — edit profile + Change email / phone / password buttons that
+   delegate to KOBIL Identity's `kc_action` flow (authenticator chosen by the realm)
+   and redirect back to `/profile` after completion
+3. **`/profile/attributes`** — pick from admin-managed catalogs (e.g. personal interests)
+4. **`/profile/privacy`** — manage consent toggles
+5. **`/profile/data-and-account`** — export, request deletion, request history
+
+Admin (require `profile_admin_session` cookie + `profile_admin` realm role):
+
+1. **`/admin`** — dashboard tiles
+2. **`/admin/audit/users`** — paged user-activity log
+3. **`/admin/audit/admin`** — paged admin-activity log (auto-logs every admin view)
+4. **`/admin/catalogs`** + **`/admin/catalogs/[slug]`** — create catalogs, add/edit/deactivate values
+
+## KOBIL Identity — what an admin needs to configure
+
+### Realm
+
+A single Keycloak realm. Provide:
+
+- `KOBIL_IDP_ISSUER` — e.g. `https://idp.<tenant>.kobil.com/auth/realms/<realm>`
+
+### Three OIDC clients (same realm)
+
+1. **`profile-miniapp`** (end users)
+   - Confidential, Standard Flow ON, Service Accounts OFF, PKCE S256
+   - Valid Redirect URIs:
+     `https://<vercel-domain>/api/auth/callback`,
+     `http://localhost:3000/api/auth/callback`
+   - Post-Logout Redirect URIs: `https://<vercel-domain>/`, `http://localhost:3000/`
+   - Login Theme: **leave empty** (avoids `displayWide` macro 500)
+   - Access-token claims: only `sub`, `preferred_username`, `email`, `email_verified`
+
+2. **`profile-admin`** (staff — for `/admin/*`)
+   - Confidential, Standard Flow ON, Service Accounts OFF, PKCE S256
+   - Valid Redirect URIs:
+     `https://<vercel-domain>/api/admin/auth/callback`,
+     `http://localhost:3000/api/admin/auth/callback`
+   - Required realm role: **`profile_admin`** — assign to admin users
+   - Mapper: include `realm_access.roles` in the access token (default in Keycloak)
+
+3. **`profile-service`** (server-to-server)
+   - Confidential, Service Accounts ON, Standard Flow OFF, `client_credentials`
+   - Required for: IDP prefill (`getUserInfo`) and sync-back (`updateProfileUser`)
+   - Service-account roles: read + write user attributes per
+     [KOBIL IDP Users API](https://developer.kobil.com/api/idp#tag/Users)
+
+### Recommended but optional
+
+- Realm role `profile_admin` for future privileged read access.
+  Default-deny applies until explicitly allowed by the backend.
+
+### KOBIL branding assets
+
+Drop the following into `src/components/layout/KobilLogo.tsx` and
+`src/app/globals.css`:
+
+- KOBIL primary / secondary brand color (hex)
+- KOBIL logo SVG (light + dark)
+- KOBIL font (file or Google Fonts name)
+
+## Environment variables
+
+Copy `.env.example` to `.env` and fill in:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.kobil.com/Development/ai-mini-apps/profile-app.git
-git branch -M master
-git push -uf origin master
+KOBIL_IDP_ISSUER=
+KOBIL_MINIAPP_CLIENT_ID=
+KOBIL_MINIAPP_CLIENT_SECRET=
+KOBIL_ADMIN_CLIENT_ID=                # optional — admin UI disabled if unset
+KOBIL_ADMIN_CLIENT_SECRET=
+KOBIL_ADMIN_ROLE=profile_admin
+KOBIL_SERVICE_CLIENT_ID=              # optional — IDP prefill/sync disabled if unset
+KOBIL_SERVICE_CLIENT_SECRET=
+KOBIL_IDP_USERS_API=                  # optional override (default: <issuer>/users)
+AUTH_SECRET=                          # openssl rand -base64 48
+APP_BASE_URL=http://localhost:3000    # or https://<your-vercel-domain>
+PROFILE_DATABASE_URL=                 # Neon pooled URL
+PROFILE_DATABASE_URL_UNPOOLED=        # Neon direct URL (for migrations)
+PRIVACY_NOTICE_VERSION=2026-05-14
 ```
 
-## Integrate with your tools
+## Local development
 
-* [Set up project integrations](https://gitlab.kobil.com/Development/ai-mini-apps/profile-app/-/settings/integrations)
+```bash
+npm install
+npx prisma migrate dev     # creates the DB schema
+npm run dev
+```
 
-## Collaborate with your team
+Open <http://localhost:3000>.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## Vercel deployment
 
-## Test and Deploy
+The repo includes a `vercel.json` that runs `prisma migrate deploy` as part of
+the Vercel build, so the database schema is created/updated automatically on
+every deploy. If `PROFILE_URL` is missing or unreachable, the build prints a
+warning and continues (the site boots; DB-backed routes 500 until you fix
+`PROFILE_URL`).
 
-Use the built-in continuous integration in GitLab.
+1. **Push** this repo to GitHub.
+2. **Import** the project at <https://vercel.com/new> (or use the *Deploy with
+   Vercel* button above).
+3. **Provision Neon Postgres**: in the Vercel project → *Storage* → *Create
+   Database* → *Neon*. Set the env-var prefix to `PROFILE` so it auto-injects
+   `PROFILE_DATABASE_URL` (pooled) and `PROFILE_DATABASE_URL_UNPOOLED`
+   (direct) — Prisma uses the pooled URL for runtime and the direct one
+   for `migrate deploy`.
+4. **Set environment variables** in the Vercel project settings:
+   - `KOBIL_IDP_ISSUER`
+   - `KOBIL_MINIAPP_CLIENT_ID` + `KOBIL_MINIAPP_CLIENT_SECRET`
+   - `KOBIL_ADMIN_CLIENT_ID` + `KOBIL_ADMIN_CLIENT_SECRET` *(optional, for `/admin/*`)*
+   - `KOBIL_SERVICE_CLIENT_ID` + `KOBIL_SERVICE_CLIENT_SECRET` *(optional, for IDP prefill/sync)*
+   - `KOBIL_ADMIN_ROLE=profile_admin`
+   - `AUTH_SECRET` (generate with `openssl rand -base64 48`)
+   - `APP_BASE_URL` = your production domain (e.g.
+     `https://profile-app.vercel.app`)
+   - `PRIVACY_NOTICE_VERSION=2026-05-14`
+5. **Register the redirect URIs** in KOBIL Identity (per client — see "Three OIDC clients" above):
+   `https://<your-vercel-domain>/api/auth/callback`.
+6. **Redeploy**. The build runs `prisma migrate deploy`, creating the schema on
+   the first deploy. Visit your domain → it redirects to `/api/auth/login` →
+   KOBIL Identity → back to `/profile`.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+## Security & GDPR posture
 
-***
+- KOBIL Identity-owned fields (`email`, `username`, `email_verified`, `password`,
+  `roles`, `groups`, MFA) are **never** persisted; reads come from the token.
+- `PATCH /me/profile` uses a strict zod allowlist; unknown keys → 422.
+- Free-text fields (`display_name`, `bio`) are sanitized server-side
+  (DOMPurify) before storage.
+- Consent records are **append-only** — `PATCH /me/privacy/consents` only
+  inserts new rows.
+- Deletion anonymizes the profile row and inserts a `privacy_requests` record;
+  audit logs are preserved.
+- Default-deny: every `/me/*` route uses `request.user.sub` as the implicit
+  identifier — no path takes a `user_id` parameter.
+- Rate limits: profile PATCH 30/h, export 3/h, delete 1/day, consent PATCH 60/h
+  per user (in-memory; consider Redis/Vercel KV for multi-instance).
+- Logs redact tokens, `Authorization`, free-text profile fields, phone, address.
 
-# Editing this README
+## Out of scope
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- eID and age verification, verification webhooks, verified-claim storage
+  (all explicitly removed from scope at the user's request).
+- Admin console.
+- Embedded-mode bootstrap. `lib/session.ts` is the seam for it; flip
+  `PROFILE_EMBED_MODE=1` and replace `getSession()` with a host-injected
+  token reader.

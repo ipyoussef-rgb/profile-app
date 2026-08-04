@@ -1,0 +1,95 @@
+variables:
+  # AZURE_REGISTRY_IMAGE is a path under kobilsystems.azurecr.io. Each
+  # KOBIL group owns its namespace; there is no fixed prefix. The skill
+  # discovered this candidate from the gitlab remote (or the user
+  # supplied it). It must equal mainContainer.image.repository in
+  # chart/values.yaml byte-for-byte; no DRY mechanism, both files own
+  # the string.
+  AZURE_REGISTRY_IMAGE: ai-mini-apps/profile-app
+  CHART_DIR: ./chart
+  MD_FILES_TO_LINT: ./CHANGELOG.md
+  DEV_IAC_BRANCH: 11.2.0
+
+include:
+  - project: 'Development/devops/ci-library'
+    ref: aceccea4abe3292f839b58ab13dac13703d5be17  # 27.24.0
+    file:
+      - docker-multiarch/.gitlab-ci.yml
+      - docker-multiarch/.x86_64.gitlab-ci.yml
+      - docker-multiarch/.x86_64.combined.gitlab-ci.yml
+      - docker-multiarch/.release.gitlab-ci.yml
+      - helm-chart/.gitlab-ci.yml
+      - md-lint/.gitlab-ci.yml
+      - sbom/.gitlab-ci.yml
+      - sbom/.syft.gitlab-ci.yml
+      - releases/.gitlab-ci.yml
+      - releases/.notification.gitlab-ci.yml
+      - common/.gitlab-ci.yml
+
+  - component: gitlab.kobil.com/Development/devops/ci-cd-catalog/deploy-ci-cd-component/deploy-tse@0.11.0
+    inputs:
+      settings_file: pipeline/settings_main.yaml
+      default_tse: true
+
+# Boots the runtime image, fetches /api/health, and fails if the server
+# does not report ok within 15 seconds. See pipeline/smoke_test.sh.
+# nodejs22-micro ships bash, so the default TEST_IMAGE_SHELL is fine.
+Project:Smoke Test:
+  extends: '.Docker:Test:Project_Testing'
+  variables:
+    TEST_SCRIPT: 'pipeline/smoke_test.sh'
+
+# Guards against the OIDC redirect_uri mismatch that breaks login behind an
+# ingress: fails if an OIDC token exchange / logout builds its URL from the
+# request host (req.url / Host header) instead of APP_BASE_URL. No-ops for apps
+# without OIDC. See pipeline/check_oidc_urls.sh.
+Project:OIDC URL Guard:
+  stage: check
+  image: gitlab.kobil.com:4567/development/devops/dd-container:${DD_CONTAINER_IMAGE_TAG}
+  tags:
+    - lightweight
+  extends:
+    - .retry-without-script-failure
+  script:
+    - sh pipeline/check_oidc_urls.sh
+  needs:
+    - job: 'Common:Init'
+
+# Guards against Chart.yaml CHANGELOG.md drift: the top version entry
+# in CHANGELOG.md must match the appVersion that ci-library derives from
+# Chart.yaml. Ported from mpower-vault-be / mpower-sign-request-be.
+Project.Enforce Version:
+  variables:
+    _FILE_PATH: './CHANGELOG.md'
+    _FIND_REGEX: '^## \[([1-9]{1}[0-9]{0,}|0)\.([1-9]{1}[0-9]{0,}|0)\.([1-9]{1}[0-9]{0,}|0)\] - [0-9]{4}-((0[1-9]{1})|(1[0-2]{1}))-((0[1-9]{1})|([1-3]{1}[0-9]{1}))$'
+  stage: check
+  image: gitlab.kobil.com:4567/development/devops/dd-container:${DD_CONTAINER_IMAGE_TAG}
+  tags:
+    - lightweight
+  extends:
+    - .retry-without-script-failure
+  script:
+    - function print_stderr(){ printf '%b\n' "${@}" >&2 ; }
+    - function print_err() { l_RED='\033[0;31m'; l_NC='\033[0m'; printf "${l_RED}%b${l_NC}\n" "${@}" >&2 ; }
+    - function err_msg(){ print_err "${@}" ; exit 1 ; }
+    - |
+      function fetch_1_version_line_number_from_file(){
+        grep -nm1 -E "${_FIND_REGEX}" "${_FILE_PATH}" | cut -d : -f 1
+      }
+    - l_VERSION_LINE_NUMBER="$(fetch_1_version_line_number_from_file)"
+    - >
+      l_VERSION="$( \
+        sed "${l_VERSION_LINE_NUMBER}q;d" "${_FILE_PATH}" | \
+        grep -oE "${_FIND_REGEX}" | \
+        grep -oE '([1-9]{1}[0-9]{0,}|0)\.([1-9]{1}[0-9]{0,}|0)\.([1-9]{1}[0-9]{0,}|0)' | head -1 \
+      )"
+    - |
+      test "${APP_VERSION_RELEASE}" == "${l_VERSION}" || \
+      { err_msg "APP_VERSION_RELEASE (${APP_VERSION_RELEASE}) != Version found in file '${_FILE_PATH}' on line '${l_VERSION_LINE_NUMBER}' (${l_VERSION})" ; }
+  needs:
+    - job: 'Common:Init'
+
+.docker_build_needs:
+  needs:
+    - job: Common:Init
+      artifacts: true

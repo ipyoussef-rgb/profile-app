@@ -1,0 +1,27 @@
+apps:
+  # `dummy` carries the alias declaration that env-repo's ansible reads
+  # before any per-app block runs. The alias name is what dev-iac's
+  # dbs.yml.j2 keys credentials on. Use a name unique within the
+  # env-repo: a common pattern is `<team>_<app>` or `<product>_<app>`,
+  # underscored. Confirm with the env-repo's existing entries before
+  # picking the alias.
+  dummy:
+    enabled: false
+    params:
+      extra_dbs:
+        postgres:
+          - alias: profile_app
+
+  # The app's own block. The custom_values map shows how `dbs.credentials.<alias>`
+  # gets read at apply time. `<alias>` must match the dummy block above.
+  profile_app:
+    enabled: true
+    chart: profile-app
+    custom_values:
+      database:
+        host: '{{ dbs.credentials.profile_app.host }}'
+        port: '{{ dbs.credentials.profile_app.port }}'
+        user: '{{ dbs.credentials.profile_app.username }}'
+        password: '{{ dbs.credentials.profile_app.password }}'
+        name: '{{ dbs.credentials.profile_app.name }}'
+        schema: public
