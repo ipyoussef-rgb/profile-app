@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-08-04
+
+### Fixed
+
+- Identity editing no longer loses data when the IDP read fails, rejects
+  impossible birthdates, stores canonical E.164 phone numbers, and the WebView
+  pinning no longer makes the page unscrollable.
+
+### Security
+
+- postcss 8.5.25 and sharp 0.35.3 via npm `overrides`, plus js-yaml and
+  brace-expansion through the lockfile — clears all high-severity advisories
+  the pipeline reported as fixable, without a Next.js major upgrade. postcss is
+  build-time only and `next/image` (sharp) is not used, but both are pinned to
+  patched versions rather than ignored.
+
 ## [1.2.0] - 2026-06-23
 
 ### Fixed
