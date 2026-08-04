@@ -78,6 +78,7 @@ export const idpProfileUpdateSchema = z
     birthdate: z
       .string()
       .regex(/^(?:\d{2}\.\d{2}\.\d{4}|\d{4}-\d{2}-\d{2})$/, "must be DD.MM.YYYY or YYYY-MM-DD")
+      .refine(isPlausibleBirthdate, "kein gültiges Datum (TT.MM.JJJJ, ab 1900, nicht in der Zukunft)")
       .optional(),
     address: addressSchema.optional(),
   })
@@ -110,13 +111,42 @@ export const FORBIDDEN_PROFILE_KEYS = [
 ] as const;
 
 /** Parse a birthdate in either DD.MM.YYYY (KOBIL's stored format) or
- *  YYYY-MM-DD (HTML date input format) into {y, m, d}. */
+ *  YYYY-MM-DD (ISO) into {y, m, d}. Returns null unless the date REALLY exists:
+ *  a shape-only check let "31.02.1990" and "19.90.0201" (an ISO string mangled
+ *  by the DD.MM.YYYY mask) through and they were written to KOBIL verbatim. The
+ *  UTC round-trip rejects overflowing days and months, including leap years. */
 function parseBirthdate(s: string): { y: number; m: number; d: number } | null {
+  let y: number, mo: number, d: number;
   let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (m) return { y: +m[1]!, m: +m[2]!, d: +m[3]! };
-  m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
-  if (m) return { y: +m[3]!, m: +m[2]!, d: +m[1]! };
-  return null;
+  if (m) {
+    [y, mo, d] = [+m[1]!, +m[2]!, +m[3]!];
+  } else {
+    m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+    if (!m) return null;
+    [y, mo, d] = [+m[3]!, +m[2]!, +m[1]!];
+  }
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  if (
+    dt.getUTCFullYear() !== y ||
+    dt.getUTCMonth() !== mo - 1 ||
+    dt.getUTCDate() !== d
+  ) {
+    return null; // e.g. 31.02. rolled over into March
+  }
+  return { y, m: mo, d };
+}
+
+/** True when the string is a calendar-valid, plausible birthdate: a real date,
+ *  not before 1900 and not in the future. Used by the schema so an impossible
+ *  value is reported as a field error instead of being stored. */
+export function isPlausibleBirthdate(s: string): boolean {
+  const p = parseBirthdate(s);
+  if (!p) return false;
+  if (p.y < 1900) return false;
+  const today = new Date();
+  const asUtc = Date.UTC(p.y, p.m - 1, p.d);
+  return asUtc <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
 }
 
 /** Convert KOBIL DD.MM.YYYY → ISO YYYY-MM-DD for the HTML date input. */

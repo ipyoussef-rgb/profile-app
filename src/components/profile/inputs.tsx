@@ -78,6 +78,10 @@ export function BirthdateField({
   const [text, setText] = useState(value ?? "");
 
   function format(raw: string): string {
+    // Pasting an ISO date (or an autofilled bday) must not be chopped as
+    // DD.MM.YY: "1990-02-01" would otherwise become "19.90.0201".
+    const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim());
+    if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
     const d = raw.replace(/\D/g, "").slice(0, 8);
     if (d.length <= 2) return d;
     if (d.length <= 4) return `${d.slice(0, 2)}.${d.slice(2)}`;

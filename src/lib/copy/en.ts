@@ -20,6 +20,8 @@ export const en = {
     emailReadOnly: "Your email is managed centrally.",
     emailVerified: "Email verified",
     emailNotVerified: "Email not verified",
+    readFailed:
+      "Your identity data could not be loaded. Please reload the page — editing is disabled until then so nothing gets overwritten.",
     notConfigured:
       "KOBIL Identity API is not configured (KOBIL_SERVICE_CLIENT_ID/SECRET missing).",
   },
