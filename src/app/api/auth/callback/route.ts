@@ -4,6 +4,7 @@ import { decodeJwt } from "jose";
 import { env } from "@/lib/env";
 import { getOidcConfig, redirectUri } from "@/lib/oidc";
 import {
+  clearAuthCookiesOn,
   KOBIL_AT_COOKIE,
   KOBIL_RT_COOKIE,
   OIDC_STATE_COOKIE,
@@ -37,9 +38,65 @@ function extractRoles(
 
 export const dynamic = "force-dynamic";
 
-function failOidc(reason: string, detail: Record<string, unknown> = {}, status = 400) {
+// One automatic retry per minute. Without a guard, "clear cookies and start a
+// fresh login" would spin forever whenever the cause is persistent (IDP down,
+// misconfigured client) instead of stale state.
+const RETRY_COOKIE = "profile_auth_retry";
+
+/** A failed callback used to return a bare 400 and leave every cookie in place.
+ *  Cookies live in the WebView's cookie jar, so the broken state survived both
+ *  killing the app and signing in again in the Super App — the error looked
+ *  permanent. Now the state is always wiped, and the first failure silently
+ *  restarts the login; a second one within the retry window stops and offers a
+ *  manual way out instead of looping. */
+function failOidc(
+  req: NextRequest,
+  reason: string,
+  detail: Record<string, unknown> = {},
+) {
   logEvent("warn", "oidc_callback_failed", { reason, ...detail });
-  return new NextResponse(`OIDC callback failed: ${reason}`, { status });
+  const secure = env().APP_BASE_URL.startsWith("https://");
+  const alreadyRetried = req.cookies.get(RETRY_COOKIE)?.value === "1";
+
+  if (!alreadyRetried) {
+    const res = NextResponse.redirect(new URL("/", env().APP_BASE_URL));
+    clearAuthCookiesOn(res, secure);
+    res.cookies.set({
+      name: RETRY_COOKIE,
+      value: "1",
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60,
+    });
+    return res;
+  }
+
+  // Second failure: stop redirecting and tell the user, with a reset link that
+  // clears everything again so they are never stuck with a bad cookie.
+  const res = new NextResponse(
+    `<!doctype html><html lang="de"><meta charset="utf-8">` +
+      `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<title>Anmeldung fehlgeschlagen</title>` +
+      `<div style="font-family:system-ui,sans-serif;max-width:32rem;margin:3rem auto;padding:0 1.25rem;color:#0d1b3e">` +
+      `<h1 style="font-size:1.25rem">Anmeldung fehlgeschlagen</h1>` +
+      `<p>Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.</p>` +
+      `<p><a href="/api/auth/reset" style="color:#2e4fff">Erneut versuchen</a></p>` +
+      `<p style="color:#5b6478;font-size:.875rem">Grund: ${reason}</p></div>`,
+    { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } },
+  );
+  clearAuthCookiesOn(res, secure);
+  res.cookies.set({
+    name: RETRY_COOKIE,
+    value: "",
+    httpOnly: true,
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return res;
 }
 
 export async function GET(req: NextRequest) {
@@ -49,13 +106,13 @@ export async function GET(req: NextRequest) {
   const qpError = req.nextUrl.searchParams.get("error");
   const qpErrorDescription = req.nextUrl.searchParams.get("error_description");
   if (qpError) {
-    return failOidc("idp_error_in_query", {
+    return failOidc(req, "idp_error_in_query", {
       error: qpError,
       error_description: qpErrorDescription,
     });
   }
   if (!qpHasCode) {
-    return failOidc("no_code_in_query", {
+    return failOidc(req, "no_code_in_query", {
       params: Array.from(req.nextUrl.searchParams.keys()),
     });
   }
@@ -68,7 +125,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse("OIDC callback is disabled in embedded mode.", { status: 404 });
   }
   if (!stateRaw) {
-    return failOidc("missing_state_cookie", {
+    return failOidc(req, "missing_state_cookie", {
       cookie_names: req.cookies.getAll().map((c) => c.name),
       app_base_url: env().APP_BASE_URL,
     });
@@ -77,7 +134,7 @@ export async function GET(req: NextRequest) {
   try {
     stateBag = JSON.parse(stateRaw);
   } catch {
-    return failOidc("corrupt_state_cookie");
+    return failOidc(req, "corrupt_state_cookie");
   }
 
   const config = await getOidcConfig();
@@ -96,7 +153,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (e) {
     const detail = await describeError(e);
-    return failOidc("authorization_code_grant_failed", {
+    return failOidc(req, "authorization_code_grant_failed", {
       ...detail,
       redirect_uri_sent: redirectUri(),
     });
@@ -115,7 +172,7 @@ export async function GET(req: NextRequest) {
 
   const claims = tokens.claims();
   if (!claims) {
-    return failOidc("tokens_missing_claims");
+    return failOidc(req, "tokens_missing_claims");
   }
 
   const sub = claims.sub as string;
@@ -127,7 +184,7 @@ export async function GET(req: NextRequest) {
       : undefined;
   const accessToken = tokens.access_token;
   if (!accessToken) {
-    return failOidc("missing_access_token");
+    return failOidc(req, "missing_access_token");
   }
 
   // Roles come from the access token; the token itself is NOT persisted.
@@ -147,6 +204,17 @@ export async function GET(req: NextRequest) {
   // Set cookies directly on the redirect response (see admin callback for the
   // Next.js 15 quirk this avoids).
   const response = NextResponse.redirect(new URL(returnTo, env().APP_BASE_URL));
+  // Login worked — drop the retry marker so a later, unrelated hiccup gets its
+  // own silent retry instead of going straight to the error page.
+  response.cookies.set({
+    name: RETRY_COOKIE,
+    value: "",
+    httpOnly: true,
+    secure: env().APP_BASE_URL.startsWith("https://"),
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
   response.cookies.set(SESSION_COOKIE, session, {
     httpOnly: true,
     secure: env().APP_BASE_URL.startsWith("https://"),

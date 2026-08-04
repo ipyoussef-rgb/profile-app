@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-08-04
+
+### Fixed
+
+- A broken auth state in the Super-App WebView no longer sticks. A failed OIDC
+  callback used to return a bare 400 and leave every cookie in place; because
+  cookies live in the WebView cookie jar, the error survived killing the app and
+  signing in again. Failures now always wipe all auth cookies, retry the login
+  silently once, and otherwise show a page with a recovery link instead of
+  looping.
+- The session JWT lifetime dropped from 8 hours to 30 minutes. It is never
+  re-checked against the IDP, so its lifetime was the window in which a logout in
+  the Super App went unnoticed here — the mini-app kept letting the user in while
+  every KOBIL call failed.
+
+### Added
+
+- `GET /api/auth/reset` clears every cookie this app owns and returns to `/`, so
+  a stuck WebView can always be recovered from the inside.
+
 ## [1.2.1] - 2026-08-04
 
 ### Fixed
