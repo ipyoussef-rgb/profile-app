@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { parsePhoneNumber } from "libphonenumber-js";
 import { ZodError } from "zod";
 import { audit } from "@/lib/audit";
 import { requireUser } from "@/lib/current-user";
@@ -34,9 +35,28 @@ function combinePhone(
   if (digits === "") return undefined;
   const code = raw[`${field}_code`];
   if (typeof code !== "string" || !/^\d{1,4}$/.test(code)) return undefined;
-  return `+${code}${digits}`;
+  const combined = `+${code}${digits}`;
+  try {
+    const parsed = parsePhoneNumber(combined);
+    // Canonicalise: a typed national trunk prefix (the German 0 in
+    // "+49 06241…") is valid input but NOT valid E.164, and consumers that
+    // require strict E.164 — SMS/OTP delivery, mChat — choke on it.
+    if (parsed?.isValid()) return parsed.number;
+  } catch {
+    /* not parseable — fall through */
+  }
+  // Return it as typed so the schema's isValidPhoneNumber reports a field error
+  // instead of the value silently vanishing (undefined would read as "untouched").
+  return combined;
 }
 const CLEARABLE_ADDRESS = ["country"] as const;
+
+/** The value the edit form was prefilled with, shipped as a `__prev.<key>`
+ *  hidden field. Missing/absent → "" so an empty submission is a no-op. */
+function prevOf(raw: Record<string, unknown>, key: string): string {
+  const v = raw[`__prev.${key}`];
+  return typeof v === "string" ? v.trim() : "";
+}
 
 export type SaveResult =
   | { ok: true; warning?: string }
@@ -121,9 +141,19 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
     const combined = combinePhone(raw, k);
     if (combined !== undefined) candidate[k] = combined;
   }
+  // Clearing only counts when the value actually CHANGED. Without this, a
+  // failed IDP prefill (a v3_user timeout collapses to an empty snapshot) would
+  // render a blank form whose save wrote [""] over the user's real title,
+  // gender and country — silently, because the read-back treats [""] as an
+  // intended clear. The form ships the loaded value in a __prev.* hidden field;
+  // when it is absent (REST callers) prevOf() yields "" and an empty submission
+  // is treated as "no change", which is the safe default.
   for (const k of CLEARABLE_SCALARS) {
     const v = raw[k];
-    if (typeof v === "string") candidate[k] = v.trim();
+    if (typeof v !== "string") continue;
+    const now = v.trim();
+    if (now === "" && prevOf(raw, k) === "") continue;
+    candidate[k] = now;
   }
 
   const addr: Record<string, string> = {};
@@ -133,7 +163,10 @@ export async function saveIdentityAction(formData: FormData): Promise<SaveResult
   }
   for (const k of CLEARABLE_ADDRESS) {
     const v = raw[`address.${k}`];
-    if (typeof v === "string") addr[k] = k === "country" ? v.trim().toUpperCase() : v.trim();
+    if (typeof v !== "string") continue;
+    const now = k === "country" ? v.trim().toUpperCase() : v.trim();
+    if (now === "" && prevOf(raw, `address.${k}`) === "") continue;
+    addr[k] = now;
   }
   if (Object.keys(addr).length > 0) candidate.address = addr;
 

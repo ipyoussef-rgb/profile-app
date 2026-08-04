@@ -54,13 +54,20 @@ html {
    opt in with their own `overflow-x: auto` container. */
 html,
 body {
+  /* Kills the rubber-band bounce and pull-to-refresh. */
   overscroll-behavior: none;
-  overflow-x: clip;
   max-width: 100%;
 }
 
 body {
-  touch-action: pan-y;
+  /* pan-y is what actually stops the page being dragged left/right; pinch-zoom
+     keeps the accessibility zoom working (WCAG 1.4.4 — a bare `pan-y` disables
+     it). Deliberately NO `overflow-x` here: on the root element overflow
+     propagates to the viewport, and `clip`/`hidden` there collapses the
+     scrollport — it left the document with scrollHeight 0, i.e. unscrollable,
+     and broke `position: sticky`. Anything genuinely wider than the viewport
+     must bring its own `overflow-x: auto` wrapper. */
+  touch-action: pan-y pinch-zoom;
 }
 
 html, body {

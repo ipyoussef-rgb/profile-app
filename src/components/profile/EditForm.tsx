@@ -36,6 +36,11 @@ export function EditForm({
 }) {
   const t = getCopy(locale);
 
+  // A read failure and "user has no values yet" are indistinguishable in the
+  // snapshot (both give found:false + empty data), so an unreachable IDP used to
+  // render a fully editable blank form. Only edit when the snapshot is real.
+  const editable = idp.configured && idp.found;
+
   const [idResult, setIdResult] = useState<SaveResult | null>(null);
   const [idPending, startIdTransition] = useTransition();
 
@@ -57,7 +62,25 @@ export function EditForm({
             <p className="mb-3 text-[15px] text-[var(--color-kobil-danger)]">
               {t.identity.notConfigured}
             </p>
+          ) : !idp.found ? (
+            <p
+              role="status"
+              className="mb-3 rounded-[var(--radius-kobil-sm)] bg-[var(--color-kobil-danger-tint)] px-3 py-2 text-[15px] text-[var(--color-kobil-danger)]"
+            >
+              {t.identity.readFailed}
+            </p>
           ) : null}
+
+          {/* The values the form was prefilled with. The action compares against
+              these so an empty field only clears an attribute that really had a
+              value — see prevOf() in edit/actions.ts. */}
+          <input type="hidden" name="__prev.title" value={idp.data.title ?? ""} />
+          <input type="hidden" name="__prev.gender" value={idp.data.gender ?? ""} />
+          <input
+            type="hidden"
+            name="__prev.address.country"
+            value={idp.data.address.country ?? ""}
+          />
 
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Title / gender are selects whose stored value is the option KEY
@@ -66,7 +89,7 @@ export function EditForm({
               <select
                 name="title"
                 defaultValue={idp.data.title ?? ""}
-                disabled={!idp.configured}
+                disabled={!editable}
                 className={inputClass}
               >
                 {optionsFor(TITLE_OPTIONS, locale).map((o) => (
@@ -80,7 +103,7 @@ export function EditForm({
               <select
                 name="gender"
                 defaultValue={idp.data.gender ?? ""}
-                disabled={!idp.configured}
+                disabled={!editable}
                 className={inputClass}
               >
                 {/* No empty option in the realm, so offer one to allow clearing. */}
@@ -98,7 +121,7 @@ export function EditForm({
                 defaultValue={idp.data.first_name ?? ""}
                 maxLength={80}
                 autoComplete="given-name"
-                disabled={!idp.configured}
+                disabled={!editable}
                 className={inputClass}
               />
             </Field>
@@ -108,21 +131,21 @@ export function EditForm({
                 defaultValue={idp.data.last_name ?? ""}
                 maxLength={80}
                 autoComplete="family-name"
-                disabled={!idp.configured}
+                disabled={!editable}
                 className={inputClass}
               />
             </Field>
             <Field label={t.fields.phone}>
-              <PhoneField name="phone" value={idp.data.phone} disabled={!idp.configured} />
+              <PhoneField name="phone" value={idp.data.phone} disabled={!editable} />
             </Field>
             <Field label={t.fields.fax}>
-              <PhoneField name="fax" value={idp.data.fax} disabled={!idp.configured} />
+              <PhoneField name="fax" value={idp.data.fax} disabled={!editable} />
             </Field>
             <Field label={t.fields.birthdate}>
               <BirthdateField
                 name="birthdate"
                 value={birthdateIsoToKobil(idp.data.birthdate)}
-                disabled={!idp.configured}
+                disabled={!editable}
               />
             </Field>
           </div>
@@ -142,7 +165,7 @@ export function EditForm({
                   name="address.country"
                   defaultValue={idp.data.address.country ?? ""}
                   autoComplete="country"
-                  disabled={!idp.configured}
+                  disabled={!editable}
                   className={inputClass}
                 >
                   <option value="">—</option>
@@ -159,7 +182,7 @@ export function EditForm({
                   defaultValue={idp.data.address.organization ?? ""}
                   maxLength={120}
                   autoComplete="organization"
-                  disabled={!idp.configured}
+                  disabled={!editable}
                   className={inputClass}
                 />
               </Field>
@@ -169,7 +192,7 @@ export function EditForm({
                   placeholder={t.fields.street}
                   defaultValue={idp.data.address.street ?? ""}
                   autoComplete="address-line1"
-                  disabled={!idp.configured}
+                  disabled={!editable}
                   className={inputClass}
                 />
               </Field>
@@ -179,7 +202,7 @@ export function EditForm({
                   defaultValue={idp.data.address.supplement ?? ""}
                   maxLength={120}
                   autoComplete="address-line2"
-                  disabled={!idp.configured}
+                  disabled={!editable}
                   className={inputClass}
                 />
               </Field>
@@ -190,7 +213,7 @@ export function EditForm({
                   defaultValue={idp.data.address.postal_code ?? ""}
                   autoComplete="postal-code"
                   inputMode="numeric"
-                  disabled={!idp.configured}
+                  disabled={!editable}
                   className={inputClass}
                 />
               </Field>
@@ -200,7 +223,7 @@ export function EditForm({
                   placeholder={t.fields.locality}
                   defaultValue={idp.data.address.locality ?? ""}
                   autoComplete="address-level2"
-                  disabled={!idp.configured}
+                  disabled={!editable}
                   className={inputClass}
                 />
               </Field>
@@ -212,7 +235,7 @@ export function EditForm({
               type="submit"
               className="w-full sm:w-auto"
               aria-busy={idPending}
-              disabled={idPending || !idp.configured}
+              disabled={idPending || !editable}
             >
               {idPending ? t.edit.saving : t.edit.saveIdentity}
             </Button>

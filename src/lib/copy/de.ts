@@ -20,6 +20,8 @@ export const de = {
     emailReadOnly: "Ihre E-Mail-Adresse wird zentral verwaltet.",
     emailVerified: "E-Mail bestätigt",
     emailNotVerified: "E-Mail nicht bestätigt",
+    readFailed:
+      "Ihre Identitätsdaten konnten nicht geladen werden. Bitte laden Sie die Seite neu — bis dahin ist das Bearbeiten gesperrt, damit keine Angaben überschrieben werden.",
     notConfigured:
       "KOBIL Identity API ist nicht konfiguriert (KOBIL_SERVICE_CLIENT_ID/SECRET fehlen).",
   },
