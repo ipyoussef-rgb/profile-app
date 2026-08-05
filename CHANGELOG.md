@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-08-05
+
+### Fixed
+
+- Deploying into an environment that injects istio sidecars failed while
+  templating the chart: `nil pointer evaluating interface {}.image` at
+  `.Values.envoySidecarHelper.image.repository`. `ks-chart-template-common` is a
+  `type: library` chart, so the default in its own values.yaml is never merged
+  into `.Values` — the parent chart has to carry it. Added the block, copied
+  verbatim from the library (0.24.1). It only surfaced in the shift/addons
+  environment because the sidecar renders only when all four istio flags are
+  true, and locally the two `global.*` ones are false, so `helm lint` and the
+  monaco deploy both passed.
+
 ## [1.2.3] - 2026-08-05
 
 ### Changed
