@@ -74,6 +74,19 @@ LABEL org.opencontainers.image.title="${NAME}" \
       org.opencontainers.image.url="${VCS_URL}" \
       org.opencontainers.image.vendor="KOBIL"
 
+# Drop npm from the runtime image. The scanner reports Critical/High CVEs in
+# npm's own bundled dependencies (tar, sigstore, ip-address, brace-expansion) —
+# none of which are in this app's lockfile. Nothing here needs npm: the
+# entrypoint runs `node server.js` and invokes the prisma CLI through
+# `node ./node_modules/prisma/build/index.js` (deliberately not npx), and the
+# HEALTHCHECK uses `node -e`. Removing it fixes those findings outright instead
+# of waiving them, and shrinks the image. Root is only used for this rm; the
+# stage still ends as 1001 (hadolint DL3002).
+USER root
+RUN rm -rf /usr/lib/node_modules/npm /usr/local/lib/node_modules/npm \
+    && rm -f /usr/bin/npm /usr/bin/npx /usr/local/bin/npm /usr/local/bin/npx \
+    && ! command -v npm
+
 USER 1001
 WORKDIR /usr/src/app
 

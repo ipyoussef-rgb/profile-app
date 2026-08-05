@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as client from "openid-client";
 import { env } from "@/lib/env";
 import { getOidcConfig, postLogoutRedirectUri } from "@/lib/oidc";
-import {
-  KOBIL_AT_COOKIE,
-  KOBIL_RT_COOKIE,
-  SESSION_COOKIE,
-  getSession,
-} from "@/lib/session";
+import { clearAuthCookiesOn, getSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -20,18 +15,13 @@ export const dynamic = "force-dynamic";
 // produced a refresh token. Clearing on the response itself actually deletes
 // them in the browser.
 function redirectClearingCookies(url: URL): NextResponse {
-  const secure = env().APP_BASE_URL.startsWith("https://");
-  const res = NextResponse.redirect(url);
-  for (const name of [SESSION_COOKIE, KOBIL_AT_COOKIE, KOBIL_RT_COOKIE]) {
-    res.cookies.set(name, "", {
-      httpOnly: true,
-      secure,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 0,
-    });
-  }
-  return res;
+  // Shares ALL_AUTH_COOKIES with the reset route and the failed callback, so no
+  // caller can forget one — leaving profile_oidc_state behind is exactly what
+  // made a broken state stick before.
+  return clearAuthCookiesOn(
+    NextResponse.redirect(url),
+    env().APP_BASE_URL.startsWith("https://"),
+  );
 }
 
 export async function GET(req: NextRequest) {

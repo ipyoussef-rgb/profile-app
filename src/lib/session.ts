@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
 import { env } from "./env";
 
@@ -17,7 +18,14 @@ export const KOBIL_AT_COOKIE = "profile_kobil_at";
 // KobilCookieAuthenticator rejects the stale credentials.
 export const KOBIL_RT_COOKIE = "profile_kobil_rt";
 
-const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
+// 30 minutes, deliberately NOT hours. This JWT is self-signed and never
+// re-checked against the IDP, so its lifetime IS the window in which a logout in
+// the Super App goes unnoticed here: the mini-app would keep letting the user in
+// while every KOBIL call fails. Kept short so that window closes quickly, and
+// long enough that the silent re-login (the IDP still has its SSO cookie, so the
+// authorize round-trip needs no interaction) stays rare. Validating per request
+// instead would cost a token call on every page view — this costs none.
+const SESSION_TTL_SECONDS = 60 * 30;
 
 export type SessionPayload = {
   sub: string;
@@ -64,6 +72,26 @@ export async function setSessionCookie(token: string) {
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
   });
+}
+
+/** Every cookie this app owns. Anything that resets auth MUST clear all of
+ *  them — a leftover `profile_oidc_state` is what made a failed callback stick
+ *  across app restarts (cookies survive in the WebView cookie jar). */
+export const ALL_AUTH_COOKIES = [
+  SESSION_COOKIE,
+  OIDC_STATE_COOKIE,
+  KOBIL_AT_COOKIE,
+  KOBIL_RT_COOKIE,
+] as const;
+
+/** Expire all auth cookies ON the given response. Next.js 15 does not reliably
+ *  ship Set-Cookie from next/headers alongside a fresh NextResponse, so callers
+ *  must mutate the response they return — see the note in the logout route. */
+export function clearAuthCookiesOn<T extends NextResponse>(res: T, secure: boolean): T {
+  for (const name of ALL_AUTH_COOKIES) {
+    res.cookies.set({ name, value: "", httpOnly: true, secure, sameSite: "lax", path: "/", maxAge: 0 });
+  }
+  return res;
 }
 
 export async function clearSessionCookie() {
