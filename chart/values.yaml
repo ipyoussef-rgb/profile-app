@@ -167,6 +167,26 @@ database:
   name: ""
   schema: "public"
 
+# -- Envoy sidecar helper. REQUIRED even though the library ships a default:
+# ks-chart-template-common is a `type: library` chart, so its own values.yaml is
+# never merged into `.Values` — it only documents what the parent chart has to
+# provide. The values below are copied verbatim from the library's values.yaml
+# (0.24.1), not invented.
+#
+# The sidecar renders only when all four istio flags are true
+# (global.routing.istio.enabled + .options.inject AND routing.istio.enabled +
+# .options.inject) and global.routing.istio.options.createSidecarHelper is set.
+# Locally the global.* flags are false, which is why `helm lint` and the monaco
+# deploy passed while the shift/addons environment — which enables them via its
+# collected base values — failed templating with
+# "nil pointer evaluating interface {}.image".
+envoySidecarHelper:
+  image:
+    repository: it-solutions/envoy-sidecar-helper
+    tag: '0.6.6'
+    pullPolicy: IfNotPresent
+  resources: {}
+
 mainContainer:
   # -- Image repository, tag, and pull policy. Tag is automatically
   # set to `Chart.appVersion` when using the default value `''`.
