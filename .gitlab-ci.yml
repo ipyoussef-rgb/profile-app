@@ -12,7 +12,7 @@ variables:
 
 include:
   - project: 'Development/devops/ci-library'
-    ref: aceccea4abe3292f839b58ab13dac13703d5be17  # 27.24.0
+    ref: bb5976223952b6639427a3d6ea30061a679e97e9  # 27.31.0
     file:
       - docker-multiarch/.gitlab-ci.yml
       - docker-multiarch/.x86_64.gitlab-ci.yml

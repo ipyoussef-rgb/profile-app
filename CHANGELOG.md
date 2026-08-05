@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-08-05
+
+### Changed
+
+- ci-library pinned ref moved from `aceccea4` (27.24.0, April) to `bb597622`
+  (27.31.0, July). Checked before switching: the anchors this repo extends
+  (`.Docker:Test:Project_Testing`, `.retry-without-script-failure`) still exist,
+  so nothing here breaks. The upgrade also drops the `Releases:NotifyTeams` job,
+  which the library removed as failing — one less job that can redden a release.
+
 ## [1.2.2] - 2026-08-04
 
 ### Fixed
