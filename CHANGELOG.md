@@ -32,9 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   brace-expansion) — none of them in this app's lockfile. Nothing at runtime
   uses npm or npx, so deleting it fixes those findings outright and shrinks the
   image.
-- CVE-2026-54369 (libacl, an OS package of the pinned base image) is waived in
-  the ignore files with the reason that it cannot be patched from this
-  repository; it needs a rebuilt base image.
+- CVE-2026-54369 (libacl) and CVE-2026-58043 (the Node.js 22.22.2 binary) are
+  waived in the ignore files. Both are shipped by the pinned base image and
+  cannot be patched from this repository; each needs a rebuilt base image. The
+  npm removal above did clear the seven npm-package findings — these two are all
+  that remain, and neither involves application code.
 
 ## [1.2.1] - 2026-08-04
 
