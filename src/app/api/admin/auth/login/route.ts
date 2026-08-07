@@ -40,14 +40,18 @@ export async function GET(req: NextRequest) {
   // Attach the state cookie directly to the redirect response — see the
   // matching note in the callback. cookies().set() from next/headers doesn't
   // reliably ship Set-Cookie alongside NextResponse.redirect() in Next 15.
+  const secureCookie = env().APP_BASE_URL.startsWith("https://");
   const response = NextResponse.redirect(authUrl);
   response.cookies.set(
     ADMIN_OIDC_STATE_COOKIE,
     JSON.stringify({ codeVerifier, state, nonce, returnTo }),
     {
       httpOnly: true,
-      secure: env().APP_BASE_URL.startsWith("https://"),
-      sameSite: "lax",
+      secure: secureCookie,
+      // Same reason as the user login route: the IDP redirects back cross-site
+      // and the WebView withholds SameSite=Lax there, so the state cookie never
+      // arrives and the callback fails with "missing_state_cookie".
+      sameSite: secureCookie ? "none" : "lax",
       path: "/",
       maxAge: 10 * 60,
     },
