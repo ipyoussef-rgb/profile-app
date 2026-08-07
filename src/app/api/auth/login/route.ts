@@ -78,14 +78,24 @@ export async function GET(req: NextRequest) {
   // cookies().set() from next/headers doesn't reliably ship Set-Cookie
   // alongside a fresh NextResponse.redirect(), which causes
   // `missing_state_cookie` on the way back from the IdP.
+  const secureCookie = env().APP_BASE_URL.startsWith("https://");
   const response = NextResponse.redirect(authUrl);
   response.cookies.set(
     OIDC_STATE_COOKIE,
     JSON.stringify({ codeVerifier, state, nonce, returnTo }),
     {
       httpOnly: true,
-      secure: env().APP_BASE_URL.startsWith("https://"),
-      sameSite: "lax",
+      secure: secureCookie,
+      // The callback is a redirect FROM the IDP, i.e. a cross-site request. A
+      // SameSite=Lax cookie is only guaranteed on top-level navigations, and the
+      // Super App's WebView does not classify the IDP redirect as one — the
+      // cookie was silently withheld and every login died on
+      // "missing_state_cookie" while same-site cookies (profile_auth_retry, _ga)
+      // arrived fine. SameSite=None fixes that; it requires Secure, so fall back
+      // to Lax on plain http (local dev), where cross-site does not apply anyway.
+      // Security is unaffected: the CSRF defence is comparing this cookie's state
+      // against the state query parameter, not the SameSite attribute.
+      sameSite: secureCookie ? "none" : "lax",
       path: "/",
       maxAge: 10 * 60,
     },

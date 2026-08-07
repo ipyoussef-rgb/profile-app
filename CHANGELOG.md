@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.6] - 2026-08-07
+
+### Fixed
+
+- Every login in the Super App's WebView died with `missing_state_cookie`. The
+  OIDC state cookie was `SameSite=Lax`, which is only guaranteed on top-level
+  navigations — and the WebView does not treat the redirect back from the IDP as
+  one, so the cookie was silently withheld. The logs made it visible: on the
+  failing callback only same-site cookies arrived (`profile_auth_retry`, `_ga`),
+  never `profile_oidc_state`, although both are set with identical attributes.
+  Both state cookies (user and admin login) are now `SameSite=None` when served
+  over https, falling back to Lax on plain http where None would be rejected for
+  lacking Secure. The CSRF defence is unchanged: it rests on comparing the state
+  in the cookie against the state query parameter, not on the SameSite attribute.
+
 ## [1.2.5] - 2026-08-05
 
 ### Fixed
