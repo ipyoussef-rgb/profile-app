@@ -337,6 +337,11 @@ routing:
             - prefix: /access-denied
             - prefix: /_next
             - prefix: /favicon.ico
+            # Static files from public/ are served at the root, so they need their own
+            # route: the gateway enumerates paths, and anything not listed gets a
+            # body-less 404 without ever reaching the app. Keeping every asset under
+            # /assets means one prefix covers all of them, now and later.
+            - prefix: /assets
             - prefix: /api/auth
             - prefix: /api/me
           # admin gateway (internal network only): admin UI + admin API
@@ -363,6 +368,8 @@ routing:
           - path: /access-denied
             pathType: Prefix
           - path: /_next
+            pathType: Prefix
+          - path: /assets
             pathType: Prefix
           - path: /favicon.ico
             pathType: Prefix

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] - 2026-08-05
+
+### Fixed
+
+- The KOBIL logo in the footer rendered as a broken image. Files in `public/` are
+  served from the root, but the istio VirtualService enumerates the paths it
+  routes and only `/favicon.ico` was listed, so `/kobil-logo.png` got a
+  body-less 404 from the gateway and never reached the app. Moved both images to
+  `public/assets/` and routed `/assets` in the istio and ingress path lists, so
+  every future static asset is covered by one prefix instead of needing its own
+  entry.
+
 ## [1.2.4] - 2026-08-05
 
 ### Fixed

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 // KOBIL logo — the approved asset, not a redraw.
 //
-// public/kobil-logo.png is the official lockup (wordmark + signal mark) with the
+// public/assets/kobil-logo.png is the official lockup (wordmark + signal mark) with the
 // white background converted to alpha and the surrounding whitespace trimmed, so
 // it sits correctly on any surface. public/kobil-mark.png is the signal mark on
 // its own for tight contexts. The brand guideline forbids recreating the logo
@@ -17,8 +17,8 @@
 // the guideline requires: the filter drives every opaque pixel to white and
 // leaves the transparent area untouched.
 
-const LOGO = { src: "/kobil-logo.png", w: 548, h: 176 };
-const MARK = { src: "/kobil-mark.png", w: 192, h: 176 };
+const LOGO = { src: "/assets/kobil-logo.png", w: 548, h: 176 };
+const MARK = { src: "/assets/kobil-mark.png", w: 192, h: 176 };
 
 const REVERSED = "[filter:brightness(0)_invert(1)]";
 
