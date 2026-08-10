@@ -84,3 +84,39 @@ export async function describeError(e: unknown): Promise<Record<string, unknown>
   }
   return out;
 }
+
+/** Request context for diagnosing why a cookie did or did not arrive. Header
+ *  names only, plus a truncated user-agent — no cookie VALUES, no PII. The
+ *  sec-fetch-* trio says how the client classified the navigation, which is what
+ *  decides whether a SameSite cookie is sent at all; a differing user-agent or
+ *  forwarded-for between the login and the callback would instead point at the
+ *  request arriving in a different browser context (and therefore a different
+ *  cookie jar). */
+export function requestDiag(req: {
+  headers: { get(name: string): string | null };
+  cookies: { getAll(): { name: string }[] };
+}): Record<string, unknown> {
+  const h = (n: string) => req.headers.get(n);
+  const names = req.cookies.getAll().map((c) => c.name);
+  return {
+    cookie_names: names,
+    cookie_count: names.length,
+    sec_fetch_site: h("sec-fetch-site"),
+    sec_fetch_mode: h("sec-fetch-mode"),
+    sec_fetch_dest: h("sec-fetch-dest"),
+    referer_host: (() => {
+      const r = h("referer");
+      if (!r) return null;
+      try {
+        return new URL(r).host;
+      } catch {
+        return "unparseable";
+      }
+    })(),
+    is_rsc: Boolean(h("rsc") || h("next-router-prefetch")),
+    host: h("host"),
+    fwd_proto: h("x-forwarded-proto"),
+    fwd_for_first: (h("x-forwarded-for") || "").split(",")[0] || null,
+    ua_tail: (h("user-agent") || "").slice(-40),
+  };
+}

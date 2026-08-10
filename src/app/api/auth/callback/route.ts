@@ -14,7 +14,7 @@ import {
 } from "@/lib/session";
 
 const USER_SESSION_TTL_SECONDS = 60 * 60 * 8;
-import { describeError, logEvent } from "@/lib/safe-log";
+import { describeError, logEvent, requestDiag } from "@/lib/safe-log";
 
 function extractRoles(
   idClaims: Record<string, unknown> | undefined,
@@ -54,7 +54,17 @@ function failOidc(
   reason: string,
   detail: Record<string, unknown> = {},
 ) {
-  logEvent("warn", "oidc_callback_failed", { reason, ...detail });
+  logEvent("warn", "oidc_callback_failed", {
+    reason,
+    ...requestDiag(req),
+    // Which of the probe cookies from the login response survived? Each differs
+    // from the real state cookie in exactly one attribute.
+    probes_arrived: ["probe_lax", "probe_none", "probe_readable"].filter((n) =>
+      Boolean(req.cookies.get(n)?.value),
+    ),
+    state_in_query: (req.nextUrl.searchParams.get("state") || "").slice(0, 10) || null,
+    ...detail,
+  });
   const secure = env().APP_BASE_URL.startsWith("https://");
   const alreadyRetried = req.cookies.get(RETRY_COOKIE)?.value === "1";
 
