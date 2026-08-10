@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.9] - 2026-08-10
+
+### Added
+
+- Coming back to the mini-app after leaving it now shows the start page instead of
+  whatever page was open when the user left. The Super-App WebView keeps (or
+  destroys and re-fetches) the last URL, so a user who left on "Profil bearbeiten"
+  found the edit form waiting for them. `ResumeToStart` detects the return through
+  three layers, because no single one holds across hosts: a `localStorage`
+  timestamp that outlives the document (Android `WebView.saveState()` keeps only
+  the back/forward list and iOS terminates the WKWebView content process, so the
+  URL is re-fetched with no event firing at all), a gap in the
+  `requestAnimationFrame` clock (which stops while the WebView is not drawn, where
+  `setInterval` would keep running), and `visibilitychange`/`pageshow`/`freeze`
+  where the host provides them. All three measure the same quantity with
+  `Date.now()` and feed one decision point, so an event can only ever bring the
+  reset forward, never mask a real gap — and never the `performance.now()` clock,
+  which is not guaranteed to advance while the process is suspended. The proper
+  fix belongs in the host — loading the entry URL on resume rather than restoring
+  the saved back/forward list; this is the web-side mitigation until then.
+- `app.resumeResetSeconds` / `app.resumeResetDirtySeconds` in the chart, so the
+  grace period is tunable per environment without an app rebuild. Two values
+  because resetting is not equally cheap: 30 s by default when nothing has been
+  typed, 180 s once the edit form has unsaved input, so stepping out to look up a
+  postcode does not discard it. Both 0 disables the reset. The edit form is
+  uncontrolled, so a reset really does drop typed input — when that happens the
+  start page now says so instead of losing it silently.
+- Two guards around saving, because the reset must never cost the user a save: a
+  save in flight defers the reset (navigating away aborts the `startTransition`,
+  and the user would get neither the success nor the error result), and a
+  successful save clears the unsaved-work state, so a later reset cannot claim
+  the changes were discarded when they were in fact stored. The in-flight check
+  reads the `aria-busy` already rendered on both save buttons, so it covers the
+  attribute picker as well without either form having to know about the guard.
+- The last-seen stamp carries the unsaved-work bit with it, so after a cold
+  restore — where the typed input died with the document and nothing in memory
+  survives to say so — the start page can still tell the user their input was
+  lost. The bit only decides whether to admit the loss, never the grace period.
+- The change-email / change-password buttons mark their detour before leaving for
+  KOBIL Identity, so returning from that deliberate round trip does not wipe the
+  form. The marker expires after 15 minutes and is consumed on use, so it can
+  never get stuck and disable the reset permanently.
+
 ## [1.2.8] - 2026-08-10
 
 ### Removed

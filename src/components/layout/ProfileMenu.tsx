@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandFooter } from "./BrandFooter";
+import { consumeDiscardedFlag } from "./ResumeToStart";
 import {
   openProfileSection,
   hostLogout,
@@ -40,6 +41,13 @@ export function ProfileMenu({
   const [announce, setAnnounce] = useState("");
   const [debug, setDebug] = useState<ReturnType<typeof bridgeDiagnostics> | null>(null);
   const [lastAction, setLastAction] = useState("");
+  const [discarded, setDiscarded] = useState(false);
+
+  // If the resume guard sent the user here from a half-filled form, say so —
+  // dropping typed input silently is worse than the detour that caused it.
+  useEffect(() => {
+    setDiscarded(consumeDiscardedFlag());
+  }, []);
 
   // ?debug overlay: shows which host bridge endpoints were detected. Also
   // proves the client hydrated (the panel only appears once JS runs).
@@ -125,6 +133,16 @@ export function ProfileMenu({
             <p className="mt-0.5 truncate text-sm text-[var(--color-kobil-text-muted)]">{email}</p>
           )}
         </div>
+
+        {discarded && (
+          <p
+            role="status"
+            className="mt-4 rounded-[var(--radius-kobil-sm)] bg-[var(--color-kobil-surface-muted)] px-3 py-2 text-[13px] text-[var(--color-kobil-text-muted)]"
+          >
+            Nicht gespeicherte Änderungen wurden verworfen, weil die App im
+            Hintergrund war.
+          </p>
+        )}
 
         <MenuGroup title="Einstellungen">
           {SETTINGS.map((it) => (

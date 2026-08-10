@@ -30,6 +30,11 @@ const schema = z.object({
   THEME_HEADER_COLOR: z.string().optional(),
   THEME_PRIMARY_COLOR: z.string().optional(),
   THEME_NAVY_COLOR: z.string().optional(),
+  // Grace periods before returning to a backgrounded WebView resets the view to
+  // the start page (see components/layout/ResumeToStart.tsx). Kept as strings so
+  // a typo in the chart falls back to the defaults instead of refusing to boot.
+  PROFILE_RESUME_RESET_SECONDS: z.string().optional(),
+  PROFILE_RESUME_RESET_DIRTY_SECONDS: z.string().optional(),
 });
 
 let cached: z.infer<typeof schema> | null = null;
@@ -82,4 +87,22 @@ export function env() {
   }
   cached = parsed.data;
   return cached;
+}
+
+function seconds(raw: string | undefined, fallback: number): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : fallback;
+}
+
+/** How long the mini-app may sit in the background before a return resets the
+ *  view to the start page. Two periods, because the cost of resetting is not the
+ *  same in both cases: with nothing typed there is nothing to lose, while a
+ *  half-filled form should survive a short detour to look something up.
+ *  Both tunable from the chart without an app rebuild; 0/0 disables the reset. */
+export function resumeResetGrace(): { pristine: number; dirty: number } {
+  const e = env();
+  return {
+    pristine: seconds(e.PROFILE_RESUME_RESET_SECONDS, 30),
+    dirty: seconds(e.PROFILE_RESUME_RESET_DIRTY_SECONDS, 180),
+  };
 }

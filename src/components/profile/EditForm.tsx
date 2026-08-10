@@ -22,6 +22,7 @@ import {
   optionsFor,
 } from "@/lib/idp-options";
 import { BirthdateField, PhoneField } from "@/components/profile/inputs";
+import { markDeliberateDetour, markSaved, setBusy } from "@/components/layout/ResumeToStart";
 import { birthdateIsoToKobil } from "@/lib/schemas/profile";
 
 const actionLink =
@@ -45,7 +46,20 @@ export function EditForm({
   const [idPending, startIdTransition] = useTransition();
 
   function submitIdentity(form: FormData) {
-    startIdTransition(async () => setIdResult(await saveIdentityAction(form)));
+    startIdTransition(async () => {
+      // Hold off the resume guard: it would abort this transition and swallow
+      // the result. `finally` so it can never stay latched on.
+      setBusy(true);
+      try {
+        const result = await saveIdentityAction(form);
+        setIdResult(result);
+        // Saved work is no longer unsaved work — otherwise a later reset would
+        // claim the changes were discarded.
+        if (result.ok) markSaved();
+      } finally {
+        setBusy(false);
+      }
+    });
   }
 
   return (
@@ -273,11 +287,22 @@ export function EditForm({
         <CardTitle>{t.edit.securityTitle}</CardTitle>
         <CardDescription>{t.edit.idpHelper}</CardDescription>
 
+        {/* These leave the app for KOBIL Identity and come back through the
+            native sentinel, so the user is legitimately away for a while —
+            mark it, or the resume guard would wipe this form on return. */}
         <div className="grid gap-3 sm:grid-cols-2">
-          <a href="/api/auth/idp-action?action=email" className={actionLink}>
+          <a
+            href="/api/auth/idp-action?action=email"
+            className={actionLink}
+            onClick={markDeliberateDetour}
+          >
             {t.edit.changeEmail}
           </a>
-          <a href="/api/auth/idp-action?action=password" className={actionLink}>
+          <a
+            href="/api/auth/idp-action?action=password"
+            className={actionLink}
+            onClick={markDeliberateDetour}
+          >
             {t.edit.changePassword}
           </a>
         </div>

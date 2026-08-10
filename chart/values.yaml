@@ -97,6 +97,15 @@ replicaCount: 1
 app:
   baseUrl: ""
   authSecret: ""
+  # -- Seconds the mini-app may sit in the background before the user returning
+  # to it is taken back to the start page (the Super-App WebView otherwise
+  # re-shows whatever page they left, e.g. "Profil bearbeiten"). Two periods,
+  # because resetting is not equally cheap: `resumeResetSeconds` applies when
+  # nothing has been typed, `resumeResetDirtySeconds` once the edit form has
+  # unsaved input, so a short detour to look up a postcode doesn't discard it.
+  # Empty => the app defaults (30 / 180). Both 0 disables the reset entirely.
+  resumeResetSeconds: ""
+  resumeResetDirtySeconds: ""
 
 # -- OIDC configuration for the primary login client (profile-miniapp,
 # Authorization Code + PKCE). The discovery URL and client ID are public;
@@ -266,6 +275,9 @@ mainContainer:
     KOBIL_ADMIN_ROLE: "{{ .Values.kobil.adminRole }}"
     KOBIL_SERVICE_CLIENT_ID: "{{ .Values.kobil.serviceClientId }}"
     KOBIL_IDP_USERS_API: "{{ .Values.kobil.idpUsersApi }}"
+    # Back-to-start-page grace periods (empty => app defaults 30 / 180).
+    PROFILE_RESUME_RESET_SECONDS: "{{ .Values.app.resumeResetSeconds }}"
+    PROFILE_RESUME_RESET_DIRTY_SECONDS: "{{ .Values.app.resumeResetDirtySeconds }}"
     # Themeable brand colours (empty => app built-in defaults).
     THEME_HEADER_COLOR: "{{ .Values.theme.headerColor }}"
     THEME_PRIMARY_COLOR: "{{ .Values.theme.primaryColor }}"

@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { requireUserOrRedirect } from "@/lib/current-user";
+import { resumeResetGrace } from "@/lib/env";
+import { ResumeToStart } from "@/components/layout/ResumeToStart";
 
 export default async function ProfileLayout({ children }: { children: React.ReactNode }) {
   await requireUserOrRedirect("/profile");
+  const grace = resumeResetGrace();
   return (
     <div className="min-h-screen bg-[var(--color-kobil-surface-muted)]">
+      {/* Mounted here, not in the root layout: this covers /profile,
+          /profile/edit and /profile/attributes and deliberately leaves /admin/*
+          alone, where a desktop tab-switch must not wipe filters or forms. */}
+      <ResumeToStart pristineSeconds={grace.pristine} dirtySeconds={grace.dirty} />
       {/* Back bar — returns to the profile menu (home). paddingTop clears the
           device safe-area so the control isn't hidden under the status bar. */}
       <header
