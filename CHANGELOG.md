@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   arrive on the callback, so SameSite was never the cause. Diagnosing before
   changing anything else.
 
+### Security
+
+- Waived CVE-2026-56848 and CVE-2026-56846, two more advisories against the Node
+  22.22.2 binary in the pinned base image. Checked whether a package-level rule
+  could end this: it cannot. The ci-library requires every ignore entry to carry
+  `vulnerability` and `reason` and strips every other key, so grype's native
+  package rules are filtered out — per-CVE entries are the only mechanism. Three
+  node advisories in three days; the lasting fix is a base-image refresh from
+  DevOps, not more entries here.
+
 ### Added
 
 - Diagnostics for the missing state cookie. `oidc_login_start` and
