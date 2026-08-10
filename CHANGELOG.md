@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2026-08-07
+
+### Changed
+
+- Reverted the state cookie back to `SameSite=Lax`. Setting it to `None` did not
+  fix the WebView login, and `profile_auth_retry` — also Lax — demonstrably does
+  arrive on the callback, so SameSite was never the cause. Diagnosing before
+  changing anything else.
+
+### Security
+
+- Waived CVE-2026-56848 and CVE-2026-56846, two more advisories against the Node
+  22.22.2 binary in the pinned base image. Checked whether a package-level rule
+  could end this: it cannot. The ci-library requires every ignore entry to carry
+  `vulnerability` and `reason` and strips every other key, so grype's native
+  package rules are filtered out — per-CVE entries are the only mechanism. Three
+  node advisories in three days; the lasting fix is a base-image refresh from
+  DevOps, not more entries here.
+
+### Added
+
+- Diagnostics for the missing state cookie. `oidc_login_start` and
+  `oidc_callback_failed` now both log the request context: cookie names, the
+  `sec-fetch-site`/`-mode`/`-dest` trio (which is what decides whether a SameSite
+  cookie is sent), whether the request is an RSC prefetch, the referer host, the
+  forwarded client IP and a truncated user-agent — plus `state_head` on both sides
+  so a callback can be matched to the login that issued its state.
+- Three probe cookies set alongside the real state cookie, each differing from it
+  in exactly one attribute (Lax, None, non-httpOnly). The callback reports which
+  survived the round-trip through the IDP, which isolates the cause instead of
+  guessing: none arriving while `_ga` does means the callback lands in a different
+  cookie jar; the short Lax probe arriving while the 237-byte state cookie does
+  not means size or encoding; only None arriving means SameSite after all.
+  Temporary — to be removed once the cause is known.
+
 ## [1.2.6] - 2026-08-07
 
 ### Fixed

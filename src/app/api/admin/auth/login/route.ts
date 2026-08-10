@@ -48,10 +48,10 @@ export async function GET(req: NextRequest) {
     {
       httpOnly: true,
       secure: secureCookie,
-      // Same reason as the user login route: the IDP redirects back cross-site
-      // and the WebView withholds SameSite=Lax there, so the state cookie never
-      // arrives and the callback fails with "missing_state_cookie".
-      sameSite: secureCookie ? "none" : "lax",
+      // Reverted from SameSite=None: it did not fix the missing state cookie in
+      // the Super App WebView, and profile_auth_retry proves Lax cookies do
+      // arrive there, so SameSite was never the cause. Instrumentation first.
+      sameSite: "lax",
       path: "/",
       maxAge: 10 * 60,
     },
