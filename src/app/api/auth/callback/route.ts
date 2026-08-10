@@ -57,11 +57,6 @@ function failOidc(
   logEvent("warn", "oidc_callback_failed", {
     reason,
     ...requestDiag(req),
-    // Which of the probe cookies from the login response survived? Each differs
-    // from the real state cookie in exactly one attribute.
-    probes_arrived: ["probe_lax", "probe_none", "probe_readable"].filter((n) =>
-      Boolean(req.cookies.get(n)?.value),
-    ),
     state_in_query: (req.nextUrl.searchParams.get("state") || "").slice(0, 10) || null,
     ...detail,
   });

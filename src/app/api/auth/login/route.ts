@@ -64,18 +64,6 @@ export async function GET(req: NextRequest) {
   // Log the EXACT redirect_uri we send so it can be copy-pasted into the
   // Keycloak client's "Valid redirect URIs". A mismatch here is the most
   // common cause of the IdP rejecting the flow before the callback runs.
-  // TEMPORARY DIAGNOSTICS. Three probe cookies are set alongside the real state
-  // cookie, differing in exactly one attribute each, so the callback can report
-  // which of them survived the round-trip through the IDP. That isolates the
-  // cause instead of guessing: if none arrive while _ga does, the callback lands
-  // in a different cookie jar; if the short Lax probe arrives but the 237-byte
-  // state cookie does not, it is size or encoding; if only the None probe
-  // arrives, it is SameSite after all. Remove once the cause is known.
-  const PROBES: { name: string; sameSite: "lax" | "none"; httpOnly: boolean }[] = [
-    { name: "probe_lax", sameSite: "lax", httpOnly: true },
-    { name: "probe_none", sameSite: "none", httpOnly: true },
-    { name: "probe_readable", sameSite: "lax", httpOnly: false },
-  ];
 
   logEvent("info", "oidc_login_start", {
     ...requestDiag(req),
@@ -110,15 +98,6 @@ export async function GET(req: NextRequest) {
       maxAge: 10 * 60,
     },
   );
-  for (const probe of PROBES) {
-    response.cookies.set(probe.name, probe.name.slice(6, 7).toUpperCase(), {
-      httpOnly: probe.httpOnly,
-      secure: secureCookie,
-      sameSite: probe.sameSite,
-      path: "/",
-      maxAge: 10 * 60,
-    });
-  }
 
   return response;
 }

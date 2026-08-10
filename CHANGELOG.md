@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.8] - 2026-08-10
+
+### Removed
+
+- The three temporary probe cookies from the login response. The cause of the
+  failing WebView login turned out to be an IDP registration detail — the URI had
+  to be registered with a trailing slash, which matches what this app sends
+  (`${APP_BASE_URL}/`) — so the probes have served their purpose. They set real
+  cookies on every login and do not belong in a released build.
+
+### Changed
+
+- Kept the `requestDiag` logging on `oidc_login_start` and `oidc_callback_failed`
+  (cookie names, sec-fetch-* trio, RSC flag, referer host, forwarded IP,
+  user-agent tail, `state_head`). It has no side effects, costs nothing, and this
+  bug took three wrong diagnoses partly because none of it was visible.
+
 ## [1.2.7] - 2026-08-07
 
 ### Changed
