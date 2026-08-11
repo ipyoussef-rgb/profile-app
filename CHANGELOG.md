@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.11] - 2026-08-11
+
+### Fixed
+
+- The AST client id was being sent under the wrong name. 1.2.10 inferred
+  `X-KOBIL-AST-CLIENT-ID`; KOBIL's `ASTGeneralHelper` names the keys it actually
+  reads, and there are no dashes inside ASTCLIENTID:
+  `X-KOBIL-ASTCLIENTID: null`, `X-KOBIL-ASTCLIENTDATA: null`,
+  `AST Client Id in session: null`. Default corrected to `X-KOBIL-ASTCLIENTID`.
+  Nothing else changes — this is exactly the correction `kobil.astClientIdKey`
+  exists for, so an already-running deployment can be fixed with a chart value
+  instead of this release.
+
 ## [1.2.10] - 2026-08-11
 
 ### Added

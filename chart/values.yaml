@@ -155,11 +155,10 @@ kobil:
   # newest one under the name below — as a request header on the token refresh and
   # as a query parameter on the authorize redirect, since a browser navigation
   # cannot carry headers. The exact name KOBIL reads is internal to
-  # com.kobil.iam.services, so it is a value here: if the IDP still logs
-  # `hasClientId: null` while the app logs ast_client_id_sent=true, correct the
-  # name here — no rebuild needed. Empty => the app default
-  # "X-KOBIL-AST-CLIENT-ID"; set to "-" style nonsense only to disable, or clear
-  # the app default by leaving it empty.
+  # com.kobil.iam.services, so it stays a value here and can be corrected without
+  # a rebuild. Empty => the app default "X-KOBIL-ASTCLIENTID", which is the name
+  # KOBIL's ASTGeneralHelper prints when it comes up empty (no dashes inside
+  # ASTCLIENTID). It also looks in X-KOBIL-ASTCLIENTDATA and in the auth session.
   astClientIdKey: ""
   # Send X-KOBIL-AST-LOGIN-REQUIRED: true as well. "1" enables, empty disables.
   # Keep empty: these flows authenticate silently via KobilCookieAuthenticator and
