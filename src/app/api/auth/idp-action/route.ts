@@ -8,7 +8,7 @@ import {
   getKobilRefreshToken,
 } from "@/lib/session";
 import { refreshAccessToken } from "@/lib/oidc";
-import { env } from "@/lib/env";
+import { env, astClientIdKeys } from "@/lib/env";
 import { getUserFromIdp } from "@/lib/kobil-idp";
 import { newestAstClientId } from "@/lib/kobil-ast";
 import { logEvent } from "@/lib/safe-log";
@@ -90,13 +90,26 @@ export async function GET(req: NextRequest) {
   // KEYS (AST_CLIENT_ID_<id>_LINKED_TIMESTAMP), so resolve the newest one here
   // and hand it to both legs of the flow. Best-effort: if the lookup fails, or
   // the service client is not configured, the flow proceeds exactly as before.
+  //
+  // Which channel can actually deliver it, established from the IDP logs:
+  //  - Query parameter on the authorize redirect: NO. Verified on 2026-08-11 —
+  //    the parameter was present and ASTGeneralHelper still logged
+  //    `X-KOBIL-ASTCLIENTID: null`, so it does not read query parameters. Kept
+  //    anyway because it costs nothing and a future version may.
+  //  - Header on the authorize redirect: IMPOSSIBLE. That leg is a browser
+  //    navigation and a page cannot set headers on one. Only the Super-App
+  //    WebView can, which is how `Authorization` gets there.
+  //  - Header on THIS token refresh: YES, it is our own request — and
+  //    ASTTokenMapper runs while the token is minted. If the mapper stamps the id
+  //    into the token, KobilCookieAuthenticator can put it into the auth session,
+  //    which is the third place ASTGeneralHelper looks. That chain is the point.
   const astHeaders: Record<string, string> = {};
   let astClientId: string | null = null;
-  const astKey = env().KOBIL_AST_CLIENT_ID_KEY;
+  const astKeys = astClientIdKeys();
   const serviceClientReady = Boolean(
     env().KOBIL_SERVICE_CLIENT_ID && env().KOBIL_SERVICE_CLIENT_SECRET,
   );
-  if (astKey && serviceClientReady && user.email) {
+  if (astKeys.length > 0 && serviceClientReady && user.email) {
     try {
       const idpUser = await getUserFromIdp(user.email);
       astClientId = idpUser ? newestAstClientId(idpUser) : null;
@@ -108,13 +121,14 @@ export async function GET(req: NextRequest) {
     }
   }
   if (astClientId) {
-    astHeaders[astKey] = astClientId;
-    if (env().KOBIL_AST_LOGIN_REQUIRED) astHeaders["X-KOBIL-AST-LOGIN-REQUIRED"] = "true";
-    // Also on the query string: the authorize step is a browser redirect, and a
-    // page cannot set headers on a navigation. This mirrors how the access token
-    // itself reaches KobilCookieAuthenticator below (key_name=Authorization).
-    params.set(astKey, astClientId);
-    if (env().KOBIL_AST_LOGIN_REQUIRED) params.set("X-KOBIL-AST-LOGIN-REQUIRED", "true");
+    for (const key of astKeys) {
+      astHeaders[key] = astClientId;
+      params.set(key, astClientId);
+    }
+    if (env().KOBIL_AST_LOGIN_REQUIRED) {
+      astHeaders["X-KOBIL-AST-LOGIN-REQUIRED"] = "true";
+      params.set("X-KOBIL-AST-LOGIN-REQUIRED", "true");
+    }
   }
 
   // The headless client's KobilCookieAuthenticator (reads key_name=Authorization)
@@ -164,7 +178,7 @@ export async function GET(req: NextRequest) {
     // rebuild). Only a prefix is logged — the full id identifies a device.
     ast_client_id_sent: Boolean(astClientId),
     ast_client_id_head: astClientId ? astClientId.slice(0, 6) : null,
-    ast_key: astClientId ? astKey : null,
+    ast_keys: astKeys,
     ast_login_required: env().KOBIL_AST_LOGIN_REQUIRED,
   });
 

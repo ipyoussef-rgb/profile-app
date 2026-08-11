@@ -45,7 +45,14 @@ const schema = z.object({
   // Note there are no dashes inside ASTCLIENTID. Still a value rather than a
   // constant, because it belongs to `com.kobil.iam.services` and can change there
   // without us; empty disables sending it at all.
-  KOBIL_AST_CLIENT_ID_KEY: z.string().default("X-KOBIL-ASTCLIENTID"),
+  // Comma-separated, because KOBIL's own components disagree on the spelling:
+  // ASTGeneralHelper prints `X-KOBIL-ASTCLIENTID` while ASTTokenMapper's sibling
+  // check is `X-KOBIL-AST-LOGIN-REQUIRED`, i.e. dashed. Sending both costs
+  // nothing — an unrecognised header is ignored — and beats alternating one
+  // guess per deploy. Empty disables sending the id at all.
+  KOBIL_AST_CLIENT_ID_KEY: z
+    .string()
+    .default("X-KOBIL-ASTCLIENTID,X-KOBIL-AST-CLIENT-ID"),
   // Send `X-KOBIL-AST-LOGIN-REQUIRED: true` alongside it. OFF by default: the
   // headless flows authenticate silently through KobilCookieAuthenticator, and
   // asking for a fresh login there previously failed with
@@ -111,6 +118,21 @@ export function env() {
 function seconds(raw: string | undefined, fallback: number): number {
   const n = Number(raw);
   return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : fallback;
+}
+
+/** The header / parameter names to hand the AST client id to KOBIL Identity
+ *  under. A list, because KOBIL's components spell it differently and an
+ *  unrecognised header is simply ignored. Empty list => do not send it. */
+export function astClientIdKeys(): string[] {
+  const raw = env().KOBIL_AST_CLIENT_ID_KEY;
+  const seen = new Set<string>();
+  for (const part of raw.split(",")) {
+    const key = part.trim();
+    // Anything that is not a valid HTTP field name would throw in Headers.set
+    // and take the whole change-email flow down with it.
+    if (key && /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/.test(key)) seen.add(key);
+  }
+  return [...seen];
 }
 
 /** How long the mini-app may sit in the background before a return resets the

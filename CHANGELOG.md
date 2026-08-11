@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.12] - 2026-08-11
+
+### Changed
+
+- The AST client id now goes out under every configured spelling at once, because
+  KOBIL's components disagree: `ASTGeneralHelper` prints `X-KOBIL-ASTCLIENTID`
+  while `ASTTokenMapper`'s sibling check is the dashed
+  `X-KOBIL-AST-LOGIN-REQUIRED`. `kobil.astClientIdKey` is a comma-separated list,
+  defaulting to both spellings. An unrecognised header is ignored, which is
+  cheaper than spending one deploy per guess. Names are validated as HTTP field
+  names before use, so a typo in the chart cannot take the flow down inside
+  `Headers.set`.
+
+### Documented
+
+- Which channels can actually carry the id, now measured rather than assumed. A
+  query parameter on the authorize redirect does NOT work: on 2026-08-11 the
+  parameter was present and `ASTGeneralHelper` still logged
+  `X-KOBIL-ASTCLIENTID: null`, so it does not read query parameters. A header on
+  that leg is impossible — it is a browser navigation, and only the Super-App
+  WebView can decorate it, which is how `Authorization` arrives. That leaves the
+  token-refresh header, where `ASTTokenMapper` runs: if the mapper stamps the id
+  into the token, `KobilCookieAuthenticator` can put it into the auth session,
+  which is the third place the helper looks. The header is kept on the query
+  string too, since it costs nothing.
+
 ## [1.2.11] - 2026-08-11
 
 ### Fixed

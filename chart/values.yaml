@@ -156,9 +156,12 @@ kobil:
   # as a query parameter on the authorize redirect, since a browser navigation
   # cannot carry headers. The exact name KOBIL reads is internal to
   # com.kobil.iam.services, so it stays a value here and can be corrected without
-  # a rebuild. Empty => the app default "X-KOBIL-ASTCLIENTID", which is the name
-  # KOBIL's ASTGeneralHelper prints when it comes up empty (no dashes inside
-  # ASTCLIENTID). It also looks in X-KOBIL-ASTCLIENTDATA and in the auth session.
+  # a rebuild. Comma-separated: KOBIL's own components disagree on the spelling
+  # (ASTGeneralHelper prints "X-KOBIL-ASTCLIENTID", while ASTTokenMapper's sibling
+  # check is the dashed "X-KOBIL-AST-LOGIN-REQUIRED"), so the default sends both
+  # "X-KOBIL-ASTCLIENTID,X-KOBIL-AST-CLIENT-ID" — an unrecognised header is
+  # ignored. KOBIL also looks in X-KOBIL-ASTCLIENTDATA (format unknown, not sent)
+  # and in the auth session.
   astClientIdKey: ""
   # Send X-KOBIL-AST-LOGIN-REQUIRED: true as well. "1" enables, empty disables.
   # Keep empty: these flows authenticate silently via KobilCookieAuthenticator and
