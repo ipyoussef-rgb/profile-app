@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.10] - 2026-08-11
+
+### Added
+
+- The headless change-email / change-password flow now passes the user's AST
+  client id to KOBIL Identity. The IDP was logging `hasClientId: null` from
+  `ASTTokenMapper` and then "Re-authentication is required for user" from
+  `KobilCookieAuthenticator`: the token it received carried no AST client
+  binding. The linked clients are only discoverable through getUserInfo, and only
+  inside the attribute KEYS — `AST_CLIENT_ID_<id>_LINKED_TIMESTAMP`, where the
+  value is the link timestamp and the id exists nowhere else — so `kobil-ast.ts`
+  parses them out of the keys and picks the most recently linked one.
+- It is sent on both legs, because they have different capabilities: as a real
+  request header on the server-side token refresh (via openid-client's
+  `customFetch`, on a private Configuration so the headers cannot leak into other
+  token calls), and as a query parameter on the authorize redirect, since a page
+  cannot set headers on a browser navigation. That mirrors how the access token
+  itself already reaches `KobilCookieAuthenticator` (`key_name=Authorization`).
+- `kobil.astClientIdKey` and `kobil.astLoginRequired` in the chart. The exact name
+  KOBIL reads the id from is internal to `com.kobil.iam.services`, so it is a
+  chart value: if the IDP still logs `hasClientId: null` while the app logs
+  `ast_client_id_sent=true`, the name can be corrected without an app rebuild.
+  `X-KOBIL-AST-LOGIN-REQUIRED` is off by default — these flows authenticate
+  silently and forcing a fresh login previously failed with
+  `invalid_user_credentials`.
+- `idp_action_start` now logs `ast_client_id_sent`, a six-character prefix of the
+  id, the key used, and the login-required flag, so the app's log can be matched
+  against the IDP's `ASTTokenMapper` line to tell "we sent nothing" apart from
+  "we sent it under the wrong name". Only a prefix: the full id identifies a
+  device.
+
+### Changed
+
+- The lookup is best-effort. If getUserInfo fails, the service client is not
+  configured, or the user has no linked AST client, the flow proceeds exactly as
+  it did before rather than failing — this adds context to the request, it does
+  not become a new prerequisite for changing your email.
+
 ## [1.2.9] - 2026-08-10
 
 ### Added

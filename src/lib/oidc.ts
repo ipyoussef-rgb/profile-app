@@ -38,7 +38,37 @@ export function postLogoutRedirectUri() {
 // KobilCookieAuthenticator — a stale one makes it demand re-authentication and
 // fail with invalid_user_credentials. Keycloak rotates refresh tokens, so the
 // caller must persist the returned refresh_token if present.
-export async function refreshAccessToken(refreshToken: string) {
+export async function refreshAccessToken(
+  refreshToken: string,
+  extraHeaders?: Record<string, string>,
+) {
   const config = await getOidcConfig();
-  return client.refreshTokenGrant(config, refreshToken);
+  if (!extraHeaders || Object.keys(extraHeaders).length === 0) {
+    return client.refreshTokenGrant(config, refreshToken);
+  }
+  // The token request is the one leg of the headless flow we make ourselves, so
+  // it is the only place we can attach real request headers — the authorize step
+  // is a browser redirect and a page cannot set headers on a navigation. KOBIL's
+  // ASTTokenMapper runs while this token is being minted (that is the
+  // `hasClientId` / `X-KOBIL-AST-LOGIN-REQUIRED` log pair), so this is where the
+  // AST context has to arrive.
+  //
+  // A separate Configuration, not the cached one: customFetch lives on the
+  // config object, and mutating the shared instance would leak these headers
+  // into every other token call racing alongside this one.
+  const e = env();
+  const scoped = new client.Configuration(
+    config.serverMetadata(),
+    e.KOBIL_MINIAPP_CLIENT_ID,
+    e.KOBIL_MINIAPP_CLIENT_SECRET,
+  );
+  scoped[client.customFetch] = (url, options) => {
+    const headers = new Headers(options?.headers as HeadersInit | undefined);
+    for (const [k, v] of Object.entries(extraHeaders)) headers.set(k, v);
+    // openid-client types the body as Uint8Array, which is a valid BodyInit at
+    // runtime but not in TS's RequestInit under this lib target — cast at the
+    // boundary rather than reshaping a body we only pass straight through.
+    return fetch(url, { ...options, headers } as RequestInit);
+  };
+  return client.refreshTokenGrant(scoped, refreshToken);
 }

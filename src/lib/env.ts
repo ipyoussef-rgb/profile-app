@@ -35,6 +35,21 @@ const schema = z.object({
   // a typo in the chart falls back to the defaults instead of refusing to boot.
   PROFILE_RESUME_RESET_SECONDS: z.string().optional(),
   PROFILE_RESUME_RESET_DIRTY_SECONDS: z.string().optional(),
+  // Name under which the AST client id is handed to KOBIL Identity on the
+  // headless change-email / change-password flow. KOBIL's ASTTokenMapper logs
+  // `hasClientId: null` when it cannot find one, and the exact key it reads is
+  // internal to `com.kobil.iam.services` — so it is configurable here rather
+  // than hardcoded, and can be corrected without an app rebuild. Empty disables
+  // sending it at all (the previous behaviour).
+  KOBIL_AST_CLIENT_ID_KEY: z.string().default("X-KOBIL-AST-CLIENT-ID"),
+  // Send `X-KOBIL-AST-LOGIN-REQUIRED: true` alongside it. OFF by default: the
+  // headless flows authenticate silently through KobilCookieAuthenticator, and
+  // asking for a fresh login there previously failed with
+  // invalid_user_credentials. Turn on only to test an interactive AST login.
+  KOBIL_AST_LOGIN_REQUIRED: z
+    .union([z.literal("1"), z.literal("")])
+    .optional()
+    .transform((v) => v === "1"),
 });
 
 let cached: z.infer<typeof schema> | null = null;

@@ -9,6 +9,8 @@ import {
 } from "@/lib/session";
 import { refreshAccessToken } from "@/lib/oidc";
 import { env } from "@/lib/env";
+import { getUserFromIdp } from "@/lib/kobil-idp";
+import { newestAstClientId } from "@/lib/kobil-ast";
 import { logEvent } from "@/lib/safe-log";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +82,41 @@ export async function GET(req: NextRequest) {
   });
   if (user.email) params.set("login_hint", user.email);
 
+  // KOBIL's ASTTokenMapper logs `hasClientId: null` and
+  // `X-KOBIL-AST-LOGIN-REQUIRED ... false` on this flow, and its
+  // KobilCookieAuthenticator then reports "Re-authentication is required for
+  // user" — the token it gets carries no AST client binding. The linked AST
+  // clients are only discoverable through getUserInfo, and only in the attribute
+  // KEYS (AST_CLIENT_ID_<id>_LINKED_TIMESTAMP), so resolve the newest one here
+  // and hand it to both legs of the flow. Best-effort: if the lookup fails, or
+  // the service client is not configured, the flow proceeds exactly as before.
+  const astHeaders: Record<string, string> = {};
+  let astClientId: string | null = null;
+  const astKey = env().KOBIL_AST_CLIENT_ID_KEY;
+  const serviceClientReady = Boolean(
+    env().KOBIL_SERVICE_CLIENT_ID && env().KOBIL_SERVICE_CLIENT_SECRET,
+  );
+  if (astKey && serviceClientReady && user.email) {
+    try {
+      const idpUser = await getUserFromIdp(user.email);
+      astClientId = idpUser ? newestAstClientId(idpUser) : null;
+    } catch (e) {
+      logEvent("warn", "idp_action_ast_lookup_failed", {
+        action: actionParam,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+  if (astClientId) {
+    astHeaders[astKey] = astClientId;
+    if (env().KOBIL_AST_LOGIN_REQUIRED) astHeaders["X-KOBIL-AST-LOGIN-REQUIRED"] = "true";
+    // Also on the query string: the authorize step is a browser redirect, and a
+    // page cannot set headers on a navigation. This mirrors how the access token
+    // itself reaches KobilCookieAuthenticator below (key_name=Authorization).
+    params.set(astKey, astClientId);
+    if (env().KOBIL_AST_LOGIN_REQUIRED) params.set("X-KOBIL-AST-LOGIN-REQUIRED", "true");
+  }
+
   // The headless client's KobilCookieAuthenticator (reads key_name=Authorization)
   // needs a CURRENTLY-VALID user token. The access-token cookie expires within
   // minutes, so prefer minting a fresh token from the refresh token
@@ -94,7 +131,7 @@ export async function GET(req: NextRequest) {
   const refreshToken = await getKobilRefreshToken();
   if (refreshToken) {
     try {
-      const tokens = await refreshAccessToken(refreshToken);
+      const tokens = await refreshAccessToken(refreshToken, astHeaders);
       if (tokens.access_token) {
         accessToken = tokens.access_token;
         tokenSource = "refresh";
@@ -121,6 +158,14 @@ export async function GET(req: NextRequest) {
     redirect_uri: redirectUri,
     has_token: Boolean(accessToken),
     token_source: tokenSource,
+    // Match this against the IDP's ASTTokenMapper line: `hasClientId: null` with
+    // ast_client_id_sent=true means KOBIL reads the id from somewhere other than
+    // KOBIL_AST_CLIENT_ID_KEY, and the key needs correcting (chart value, no
+    // rebuild). Only a prefix is logged — the full id identifies a device.
+    ast_client_id_sent: Boolean(astClientId),
+    ast_client_id_head: astClientId ? astClientId.slice(0, 6) : null,
+    ast_key: astClientId ? astKey : null,
+    ast_login_required: env().KOBIL_AST_LOGIN_REQUIRED,
   });
 
   const response = NextResponse.redirect(url);

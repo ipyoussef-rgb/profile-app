@@ -147,6 +147,25 @@ kobil:
   # Optional override for the IDP Users API base
   # (KOBIL_IDP_USERS_API; default <discoveryUrl>/v3_user).
   idpUsersApi: ""
+  # -- AST (app/device) client binding for the headless change-email /
+  # change-password flow. KOBIL's ASTTokenMapper logs `hasClientId: null` when it
+  # finds no AST client id, and KobilCookieAuthenticator then demands
+  # re-authentication. The app reads the user's linked AST client id out of the
+  # getUserInfo attribute KEYS (AST_CLIENT_ID_<id>_LINKED_TIMESTAMP) and sends the
+  # newest one under the name below — as a request header on the token refresh and
+  # as a query parameter on the authorize redirect, since a browser navigation
+  # cannot carry headers. The exact name KOBIL reads is internal to
+  # com.kobil.iam.services, so it is a value here: if the IDP still logs
+  # `hasClientId: null` while the app logs ast_client_id_sent=true, correct the
+  # name here — no rebuild needed. Empty => the app default
+  # "X-KOBIL-AST-CLIENT-ID"; set to "-" style nonsense only to disable, or clear
+  # the app default by leaving it empty.
+  astClientIdKey: ""
+  # Send X-KOBIL-AST-LOGIN-REQUIRED: true as well. "1" enables, empty disables.
+  # Keep empty: these flows authenticate silently via KobilCookieAuthenticator and
+  # forcing a fresh login previously failed with invalid_user_credentials. Enable
+  # only to test an interactive AST login.
+  astLoginRequired: ""
 
 # -- Brand colours, overridable per environment without an app rebuild. Empty
 # => the app's built-in defaults. Set a CSS colour (e.g. "#1b3a87"); the app
@@ -275,6 +294,9 @@ mainContainer:
     KOBIL_ADMIN_ROLE: "{{ .Values.kobil.adminRole }}"
     KOBIL_SERVICE_CLIENT_ID: "{{ .Values.kobil.serviceClientId }}"
     KOBIL_IDP_USERS_API: "{{ .Values.kobil.idpUsersApi }}"
+    # AST client binding for the headless change-email / change-password flow.
+    KOBIL_AST_CLIENT_ID_KEY: "{{ .Values.kobil.astClientIdKey }}"
+    KOBIL_AST_LOGIN_REQUIRED: "{{ .Values.kobil.astLoginRequired }}"
     # Back-to-start-page grace periods (empty => app defaults 30 / 180).
     PROFILE_RESUME_RESET_SECONDS: "{{ .Values.app.resumeResetSeconds }}"
     PROFILE_RESUME_RESET_DIRTY_SECONDS: "{{ .Values.app.resumeResetDirtySeconds }}"
