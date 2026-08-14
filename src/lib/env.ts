@@ -57,6 +57,17 @@ const schema = z.object({
   // headless flows authenticate silently through KobilCookieAuthenticator, and
   // asking for a fresh login there previously failed with
   // invalid_user_credentials. Turn on only to test an interactive AST login.
+  // Show the "E-Mail-Adresse ändern" / "Passwort ändern" buttons. OFF by
+  // default: the headless KOBIL flow behind them currently fails at submit with
+  // `INVALID EMAIL INFO:: Invalid format of email` and a numeric parse of the
+  // literal string "null", both inside com.kobil.iam.services, so offering the
+  // buttons only leads users into a dead end. The route stays callable so the
+  // flow can still be tested by URL — this hides the entry points, it does not
+  // remove the feature. "1" shows them again, no rebuild needed.
+  PROFILE_IDP_ACTIONS: z
+    .union([z.literal("1"), z.literal("")])
+    .optional()
+    .transform((v) => v === "1"),
   KOBIL_AST_LOGIN_REQUIRED: z
     .union([z.literal("1"), z.literal("")])
     .optional()

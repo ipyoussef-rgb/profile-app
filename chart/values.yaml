@@ -106,6 +106,14 @@ app:
   # Empty => the app defaults (30 / 180). Both 0 disables the reset entirely.
   resumeResetSeconds: ""
   resumeResetDirtySeconds: ""
+  # -- Show the "E-Mail-Adresse ändern" / "Passwort ändern" buttons on
+  # /profile/edit. Empty (default) HIDES them: the headless KOBIL flow behind them
+  # currently fails at submit inside com.kobil.iam.services ("Invalid format of
+  # email", plus a numeric parse of the literal string "null"), so offering the
+  # buttons only walks users into a dead end. Set to "1" to show them again once
+  # that is fixed — no rebuild. The /api/auth/idp-action route stays callable
+  # either way, so the flow can still be tested by URL.
+  idpActions: ""
 
 # -- OIDC configuration for the primary login client (profile-miniapp,
 # Authorization Code + PKCE). The discovery URL and client ID are public;
@@ -299,6 +307,9 @@ mainContainer:
     # AST client binding for the headless change-email / change-password flow.
     KOBIL_AST_CLIENT_ID_KEY: "{{ .Values.kobil.astClientIdKey }}"
     KOBIL_AST_LOGIN_REQUIRED: "{{ .Values.kobil.astLoginRequired }}"
+    # Entry points for the headless change-email / change-password flow
+    # (empty => hidden; the route itself stays callable for testing).
+    PROFILE_IDP_ACTIONS: "{{ .Values.app.idpActions }}"
     # Back-to-start-page grace periods (empty => app defaults 30 / 180).
     PROFILE_RESUME_RESET_SECONDS: "{{ .Values.app.resumeResetSeconds }}"
     PROFILE_RESUME_RESET_DIRTY_SECONDS: "{{ .Values.app.resumeResetDirtySeconds }}"

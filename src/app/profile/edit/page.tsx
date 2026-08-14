@@ -2,6 +2,7 @@ import { requireUserOrRedirect } from "@/lib/current-user";
 import { loadIdpProfile } from "@/lib/idp-prefill";
 import { EditForm } from "@/components/profile/EditForm";
 import { DEFAULT_LOCALE } from "@/lib/copy";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -15,5 +16,7 @@ export default async function EditProfilePage() {
     idp.data.email_verified = user.email_verified ?? null;
   }
 
-  return <EditForm idp={idp} locale={DEFAULT_LOCALE} />;
+  return (
+    <EditForm idp={idp} locale={DEFAULT_LOCALE} showIdpActions={env().PROFILE_IDP_ACTIONS} />
+  );
 }

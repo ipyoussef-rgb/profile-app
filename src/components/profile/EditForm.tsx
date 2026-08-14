@@ -31,9 +31,13 @@ const actionLink =
 export function EditForm({
   idp,
   locale = "de",
+  showIdpActions = false,
 }: {
   idp: IdpProfileSnapshot;
   locale?: Locale;
+  /** Whether to offer the headless KOBIL change-email / change-password buttons.
+   *  Off while that flow is broken upstream — see PROFILE_IDP_ACTIONS. */
+  showIdpActions?: boolean;
 }) {
   const t = getCopy(locale);
 
@@ -285,29 +289,41 @@ export function EditForm({
       {/* Email / password — handled by KOBIL's dedicated headless clients. */}
       <Card>
         <CardTitle>{t.edit.securityTitle}</CardTitle>
-        <CardDescription>{t.edit.idpHelper}</CardDescription>
+        {/* The helper text only makes sense next to the buttons it describes. */}
+        {showIdpActions && <CardDescription>{t.edit.idpHelper}</CardDescription>}
 
         {/* These leave the app for KOBIL Identity and come back through the
             native sentinel, so the user is legitimately away for a while —
             mark it, or the resume guard would wipe this form on return. */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <a
-            href="/api/auth/idp-action?action=email"
-            className={actionLink}
-            onClick={markDeliberateDetour}
-          >
-            {t.edit.changeEmail}
-          </a>
-          <a
-            href="/api/auth/idp-action?action=password"
-            className={actionLink}
-            onClick={markDeliberateDetour}
-          >
-            {t.edit.changePassword}
-          </a>
-        </div>
+        {showIdpActions && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <a
+              href="/api/auth/idp-action?action=email"
+              className={actionLink}
+              onClick={markDeliberateDetour}
+            >
+              {t.edit.changeEmail}
+            </a>
+            <a
+              href="/api/auth/idp-action?action=password"
+              className={actionLink}
+              onClick={markDeliberateDetour}
+            >
+              {t.edit.changePassword}
+            </a>
+          </div>
+        )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--color-kobil-border)] pt-4">
+        {/* Keep showing which address you log in with and whether it is verified
+            — that is useful on its own. The divider only earns its place when
+            there are buttons above it. */}
+        <div
+          className={`flex flex-wrap items-center gap-3 ${
+            showIdpActions
+              ? "mt-4 border-t border-[var(--color-kobil-border)] pt-4"
+              : "mt-2"
+          }`}
+        >
           {idp.data.email ? (
             <span className="text-[13px] text-[var(--color-kobil-text-muted)]">
               {t.fields.email}: {idp.data.email}

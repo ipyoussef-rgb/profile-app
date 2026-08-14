@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.13] - 2026-08-11
+
+### Changed
+
+- The "E-Mail-Adresse ändern" and "Passwort ändern" buttons are hidden. The
+  headless KOBIL flow behind them fails at the submit step inside
+  `com.kobil.iam.services` — `INVALID EMAIL INFO:: Invalid format of email` plus a
+  numeric parse of the literal string `"null"` — so the buttons only walked users
+  into a dead end. Hidden behind `app.idpActions` rather than deleted: set it to
+  "1" to bring them back without a rebuild once the upstream flow works.
+- `/api/auth/idp-action` stays callable on purpose. This hides the entry points,
+  it does not remove the feature, so the AST work from 1.2.10-1.2.12 can still be
+  tested by opening the URL directly.
+- The card keeps showing which address you log in with and whether it is verified,
+  which is useful on its own. The helper text about central email/password changes
+  goes with the buttons, and the divider above the address only renders when there
+  are buttons above it.
+
 ## [1.2.12] - 2026-08-11
 
 ### Changed
