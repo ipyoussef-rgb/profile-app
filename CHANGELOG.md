@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.14] - 2026-08-14
+
+### Security
+
+- nanoid pinned to `^3.3.18` through npm `overrides`, clearing GHSA-2v37-7h3g-55p8
+  / CVE-2026-67213 (High) — "custom generators can loop indefinitely when size is
+  zero". It arrives only as a transitive dependency of postcss, which is
+  build-time only, and npm's advisory data gives the vulnerable range as
+  `<3.3.18`, so a patch bump is the whole fix. Chosen over an ignore-file entry
+  because the finding is genuinely fixable; `npm audit` now reports zero
+  vulnerabilities at every severity. This is the same approach already used for
+  postcss and sharp.
+
 ## [1.2.13] - 2026-08-11
 
 ### Changed
