@@ -101,25 +101,18 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-[var(--color-kobil-surface-muted)]">
-      {/* Slim brand band. It carries the device safe-area so the first card is
-          never clipped by the notch / status bar, which the deleted menu header
-          used to do (requires viewport-fit=cover, set in layout). */}
-      <header
-        className="bg-[var(--color-kobil-header)]"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        <p className="py-3 text-center text-[15px] font-semibold uppercase tracking-[0.2em] text-white">
-          Profil
-        </p>
-      </header>
-
       {/* This page is the reset target, so the guard never navigates away from
           here; it is mounted only to keep the heartbeat ticking. */}
       <ResumeToStart pristineSeconds={grace.pristine} dirtySeconds={grace.dirty} />
 
+      {/* No header any more, so main itself clears the notch and the home
+          indicator (needs viewport-fit=cover, set in the root layout). */}
       <main
         className="mx-auto max-w-3xl space-y-4 px-4 py-6"
-        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+        style={{
+          paddingTop: "calc(1.5rem + env(safe-area-inset-top))",
+          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+        }}
       >
         <DiscardedNotice />
 

@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   away, with its existing edit buttons.
 - `/profile` redirects to `/`, so older links and any deep link into the overview
   keep working instead of 404-ing.
+- The avatar shows the initials of the first AND last name (e.g. "YM") instead of a
+  single letter. When the IDP has no name yet it falls back to the first two
+  word-ish parts of the username or email, so it is never a bare "?".
 
 ### Removed
 
@@ -31,14 +34,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `openAdminMenu`; the `/admin` surface itself is unaffected and still reachable
   by URL. `KobilLogo` stays — the admin header uses it.
 
+### Security
+
+- deepmerge-ts pinned to `^8.0.1` through npm `overrides`, clearing
+  GHSA-ggr8-5vv4-36mx (High). It is a transitive dependency of the prisma CLI, and
+  `@prisma/config` pins it at exactly 7.1.5 while the advisory is only fixed in
+  8.x — so unlike the nanoid bump this forces a major version on a pinned
+  dependency. Verified before shipping, because the container's entrypoint blocks
+  on `prisma db push` and a broken CLI would mean pods never start: `prisma
+  validate` reports the schema valid, `prisma generate` produces the client, and
+  `npm audit` now reports zero vulnerabilities at every severity.
+- Waived CVE-2026-48937 and CVE-2026-48617, two more advisories against the Node
+  22.22.2 binary in the pinned base image. That makes six Node-binary waivers
+  against the same pinned image; each new pipeline run finds more. The lasting fix
+  is a refreshed base image from DevOps — this file cannot keep absorbing them.
+
 ### Kept
 
 - The "Änderungen verworfen" notice, now in its own `DiscardedNotice` component.
   The resume guard writes that flag and lands the user on this page expecting it
   to be read; without it, dropped input would vanish silently.
-- A slim navy "Profil" band at the top. It is not the old menu header; it carries
-  `env(safe-area-inset-top)` so the first card is never clipped by the notch,
-  which the deleted header used to handle. The bottom safe-area moved onto `main`.
+- The navy "Profil" band is gone too, so the page is nothing but the user's data.
+  The safe-area insets it was carrying moved onto `main`, top and bottom, so the
+  first card still clears the notch and the last one clears the home indicator.
 
 ## [1.2.14] - 2026-08-14
 

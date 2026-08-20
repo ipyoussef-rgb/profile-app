@@ -29,7 +29,23 @@ export function Overview({
   const fullName =
     [idp.data.first_name, idp.data.last_name].filter(Boolean).join(" ") || null;
   const display = profile.display_name || fullName || idp.data.username || idp.data.email || "—";
-  const initial = (display[0] || "?").toUpperCase();
+  // First letter of the first name plus first letter of the last name. Falls back
+  // to the first two word-ish parts of whatever is displayed (username or email)
+  // when the IDP has no name yet, so the avatar is never a bare "?".
+  const initials =
+    [idp.data.first_name, idp.data.last_name]
+      .map((n) => n?.trim().charAt(0))
+      .filter(Boolean)
+      .join("")
+      .toUpperCase() ||
+    display
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase() ||
+    "?";
   const age = ageOverFromBirthdate(idp.data.birthdate);
 
   return (
@@ -40,7 +56,7 @@ export function Overview({
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-kobil-primary)] to-[var(--color-kobil-secondary)] text-2xl font-semibold text-white ring-4 ring-[var(--color-kobil-primary-tint)] sm:h-20 sm:w-20 sm:text-3xl"
             aria-hidden
           >
-            {initial}
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
