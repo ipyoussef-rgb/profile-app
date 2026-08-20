@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.15] - 2026-08-14
+
+### Changed
+
+- The mini-app now opens directly on the user's attributes. The landing page used
+  to be a KOBIL-style settings menu whose rows opened native Super-App screens via
+  `openProfileSection` (Konto, Privatsphäre & Sicherheit, Signatur, Lizenzen,
+  Rechtliche Informationen, Kontaktieren Sie uns). That menu is removed, and `/`
+  now shows the Identitätsdaten and Interessen & Eigenschaften overview straight
+  away, with its existing edit buttons.
+- `/profile` redirects to `/`, so older links and any deep link into the overview
+  keep working instead of 404-ing.
+
+### Removed
+
+- `ProfileMenu` and the six native-screen shortcuts it contained. The screens
+  themselves live in the Super App; the mini-app simply no longer links to them.
+  `openProfileSection` stays in the host bridge as a documented capability.
+- The **Ausloggen** button. The mini-app no longer offers a logout control; the
+  Super App owns the SSO session. `/api/auth/logout` still exists and still works
+  when called directly, and `hostLogout` remains in the host bridge.
+- The **KOBIL brand footer** (`BrandFooter`), and with it the long-press gesture
+  that opened the host admin menu. That was the only in-app trigger for
+  `openAdminMenu`; the `/admin` surface itself is unaffected and still reachable
+  by URL. `KobilLogo` stays — the admin header uses it.
+
+### Kept
+
+- The "Änderungen verworfen" notice, now in its own `DiscardedNotice` component.
+  The resume guard writes that flag and lands the user on this page expecting it
+  to be read; without it, dropped input would vanish silently.
+- A slim navy "Profil" band at the top. It is not the old menu header; it carries
+  `env(safe-area-inset-top)` so the first card is never clipped by the notch,
+  which the deleted header used to handle. The bottom safe-area moved onto `main`.
+
 ## [1.2.14] - 2026-08-14
 
 ### Security
